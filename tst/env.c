@@ -51,7 +51,7 @@ void write(int id, const char * env, int read, int write, bool dry_run, const ch
 
   assert(unsetenv("MAKEFLAGS") == 0);
 }
-#include <errno.h>
+
 int main()
 {
   read(1, NULL, -1, -1, false, 0);
@@ -63,15 +63,16 @@ int main()
   read(7, "--jobserv", -1, -1, false, 0);
   read(8, "--jobserver-auth3,4", -1, -1, false, -1);
   read(9, "--jobserver-auth=", -1, -1, false, -1);
-  read(10, "--jobserver-auth=3", 3, -1, false, -1);
-  read(11, "--jobserver-auth=34", 34, -1, false, -1);
-  read(12, "--jobserver-auth=3,", 3, -1, false, -1);
+  read(10, "--jobserver-auth=3", -1, -1, false, -1);
+  read(11, "--jobserver-auth=34", -1, -1, false, -1);
+  read(12, "--jobserver-auth=3,", -1, -1, false, -1);
   read(13, "--jobserver-auth=3,4dz", 3, 4, false, 0);
   read(14, "--jobserver-auth=3,4 n", 3, 4, false, 0);
   read(15, "--jobserver-auth=b,4", -1, -1, false, -1);
-  read(16, "--jobserver-auth=3,f", 3, -1, false, -1);
+  read(16, "--jobserver-auth=3,f", -1, -1, false, -1);
   read(17, "n --warn-undefined-variables", -1, -1, true, 0);
   read(18, "--warn-undefined-variables", -1, -1, false, 0);
+  read(19, "n --jobserver-auth=-2,4", -1, -1, true, -1);
 
   write(1, NULL, 3, 4, true, "n --jobserver-auth=3,4");
   write(2, NULL, 3, 4, false, "--jobserver-auth=3,4");

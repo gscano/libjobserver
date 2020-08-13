@@ -1,6 +1,7 @@
 #include <assert.h> // assert()
 #include <stdbool.h> // bool
 #include <errno.h> // errno
+#include <limits.h> // INT_MAX
 #include <stdio.h> // snprintf()
 #include <stdlib.h> // getenv(), setenv(), strtol()
 #include <string.h> // strchr(), strstr()
@@ -10,12 +11,12 @@
 #define MAKEFLAGS_AUTH "--jobserver-auth"
 
 static inline
-bool search_for_n_in_first_word(char const * env)
+bool search_for_char_in_first_word(char const * env, char c)
 {
   bool found = false;
 
   while(*env != '\0' && *env != ' ' && !found)
-    found = *env++ == 'n';
+    found = *env++ == c;
 
   return found;
 }
@@ -29,7 +30,7 @@ int jobserver_getenv(int * read_fd, int * write_fd, bool * dry_run)
   char const * env = getenv(MAKEFLAGS);
   if(env == NULL) return 0;
 
-  if(env[0] != '-') *dry_run = search_for_n_in_first_word(env);
+  if(env[0] != '-') *dry_run = search_for_char_in_first_word(env, 'n');
 
   char const * fds = strstr(env, MAKEFLAGS_AUTH);
   if(fds == NULL) return 0;
@@ -41,21 +42,23 @@ int jobserver_getenv(int * read_fd, int * write_fd, bool * dry_run)
   errno = 0;
 
   env = fds;
-  fd = strtol(fds, (char **)&fds, 10);
-  if(fds == env || errno) goto error;
-  *read_fd = fd;
+  fd = strtol(fds, (char **)&fds, 10);// errno: EINVAL, ERANGE
+  if(fds == env || errno || fd < 0 || fd > INT_MAX) goto error;
+  *read_fd = (int)fd;
 
-  if(*fds++ != ',') return -1;
+  if(*fds++ != ',') goto error;
 
   env = fds;
-  fd = strtol(fds, (char **)&fds, 10);
-  if(fds == env || errno) goto error;
-  *write_fd = fd;
+  fd = strtol(fds, (char **)&fds, 10);// errno: EINVAL, ERANGE
+  if(fds == env || errno || fd < 0 || fd > INT_MAX) goto error;
+  *write_fd = (int)fd;
 
   return 0;
 
  error:
-  errno = EBADF;// EINVAL or ERANGE from strtol()
+  *read_fd = -1;
+  *write_fd = -1;
+  errno = EBADF;
   return -1;
 }
 
@@ -78,7 +81,7 @@ int jobserver_setenv(int read_fd, int write_fd, bool dry_run)
       end = env + strlen(env);
       if(end != env || dry_run) space = true;
 
-      if(dry_run && !search_for_n_in_first_word(env))
+      if(dry_run && !search_for_char_in_first_word(env, 'n'))
 	n = "n";
 
       split = strstr(env, "-- ");
@@ -107,5 +110,5 @@ int jobserver_setenv(int read_fd, int write_fd, bool dry_run)
   if(ssize == -1) return -1;
   assert(ssize == size);
 
-  return setenv(MAKEFLAGS, buffer, 1);
+  return setenv(MAKEFLAGS, buffer, 1);// errno: ENOMEM
 }

@@ -21,16 +21,25 @@ bool search_for_char_in_first_word(char const * env, char c)
   return found;
 }
 
-int jobserver_getenv(int * read_fd, int * write_fd, bool * dry_run)
+int jobserver_getenv(int * read_fd, int * write_fd,
+		     bool * dry_run, bool * debug, bool * keep_going)
 {
   *read_fd = -1;
   *write_fd = -1;
   *dry_run = false;
+  *keep_going = false;
+  *debug = false;
+
 
   char const * env = getenv(MAKEFLAGS);
   if(env == NULL) return 0;
 
-  if(env[0] != '-') *dry_run = search_for_char_in_first_word(env, 'n');
+  if(env[0] != '-')
+    {
+      *dry_run = search_for_char_in_first_word(env, 'n');
+      *debug = search_for_char_in_first_word(env, 'd');
+      *keep_going = search_for_char_in_first_word(env, 'k');
+    }
 
   char const * fds = strstr(env, MAKEFLAGS_AUTH);
   if(fds == NULL) return 0;
@@ -62,10 +71,13 @@ int jobserver_getenv(int * read_fd, int * write_fd, bool * dry_run)
   return -1;
 }
 
-int jobserver_setenv(int read_fd, int write_fd, bool dry_run)
+int jobserver_setenv(int read_fd, int write_fd,
+		     bool dry_run, bool debug, bool keep_going)
 {
   char const * env = getenv(MAKEFLAGS);
   char const * n = "";
+  char const * d = "";
+  char const * k = "";
   char const * split;
   char const * end;
   bool space = false;
@@ -73,7 +85,10 @@ int jobserver_setenv(int read_fd, int write_fd, bool dry_run)
   if(env == NULL)
     {
       env = "";
-      if(dry_run) n = "n ";
+      if(dry_run) n = "n";
+      if(debug) d = "d";
+      if(keep_going) k = "k";
+      if(dry_run || debug || keep_going) space = true;
       split = end = env;
     }
   else
@@ -81,8 +96,9 @@ int jobserver_setenv(int read_fd, int write_fd, bool dry_run)
       end = env + strlen(env);
       if(end != env || dry_run) space = true;
 
-      if(dry_run && !search_for_char_in_first_word(env, 'n'))
-	n = "n";
+      if(dry_run && !search_for_char_in_first_word(env, 'n')) n = "n";
+      if(debug && !search_for_char_in_first_word(env, 'd')) d = "d";
+      if(keep_going && !search_for_char_in_first_word(env, 'k')) k = "k";
 
       split = strstr(env, "-- ");
       if(split == NULL)
@@ -92,8 +108,8 @@ int jobserver_setenv(int read_fd, int write_fd, bool dry_run)
   bool space2 = split - 1 >= env && split[-1] == ' ';
 
 #define JOBSERVER_PRINT_ENV(ptr, size)				\
-  snprintf(ptr, size, "%s%.*s%s"MAKEFLAGS_AUTH"=%d,%d%s%s",	\
-	   n, (int)(split - env - space2), env,			\
+  snprintf(ptr, size, "%s%s%s%.*s%s"MAKEFLAGS_AUTH"=%d,%d%s%s",	\
+	   n, d, k, (int)(split - env - space2), env,		\
 	   space ? " " : "",					\
 	   read_fd, write_fd, split != end ? " " : "", split)
 

@@ -10,13 +10,17 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
 {
   printf("Test #%d\n", id);
 
-  if(env != NULL) assert(setenv("MAKEFLAGS", env, 1) == 0);
+  if(env == NULL) env = "";
+  assert(setenv("MAKEFLAGS", env, 1) == 0);
 
-  int read_ = -1;
-  int write_ = -1;
-  bool dry_run_ = false;
+  int read_;
+  int write_;
+  bool dry_run_;
+  bool debug_;
+  bool keep_going_;
 
-  int status = jobserver_getenv(&read_, &write_, &dry_run_);
+  int status = jobserver_getenv(&read_, &write_, &dry_run_, &debug_, &keep_going_);
+
   if(status != ret)
     {
       fprintf(stderr, "Incorrect function return: %d (%d expected)\t",
@@ -31,7 +35,9 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
   assert(unsetenv("MAKEFLAGS") == 0);
 }
 
-void write(int id, const char * env, int read, int write, bool dry_run, const char * renv)
+void write(int id, const char * env,
+	   int read, int write, bool dry_run, bool debug, bool keep_going,
+	   const char * renv)
 {
   if(env != NULL)
     {
@@ -40,7 +46,7 @@ void write(int id, const char * env, int read, int write, bool dry_run, const ch
 
   printf("Test #%d\n", id);
 
-  assert(jobserver_setenv(read, write, dry_run) == 0);
+  assert(jobserver_setenv(read, write, dry_run, debug, keep_going) == 0);
 
   if(memcmp(getenv("MAKEFLAGS"), renv, strlen(getenv("MAKEFLAGS"))) != 0)
     {
@@ -74,16 +80,18 @@ int main()
   read(18, "--warn-undefined-variables", -1, -1, false, 0);
   read(19, "n --jobserver-auth=-2,4", -1, -1, true, -1);
 
-  write(1, NULL, 3, 4, true, "n --jobserver-auth=3,4");
-  write(2, NULL, 3, 4, false, "--jobserver-auth=3,4");
-  write(3, "", 3, 4, true, "n --jobserver-auth=3,4");
-  write(4, "", 3, 4, false, "--jobserver-auth=3,4");
-  write(5, "d", 3, 4, false, "d --jobserver-auth=3,4");
-  write(6, "d", 3, 4, true, "nd --jobserver-auth=3,4");
-  write(7, "ni", 3, 4, false, "ni --jobserver-auth=3,4");
-  write(8, "ni", 3, 4, true, "ni --jobserver-auth=3,4");
-  write(9, "-- NAME=VALUE", 3, 4, false, " --jobserver-auth=3,4 -- NAME=VALUE");
-  write(10, "in -- NAME=VALUE", 3, 4, false, "in --jobserver-auth=3,4 -- NAME=VALUE");
+  write(1, NULL, 3, 4, false, false, false, "--jobserver-auth=3,4");
+  write(2, NULL, 3, 4, true, false, false, "n --jobserver-auth=3,4");
+  write(3, NULL, 3, 4, false, true, true, "dk --jobserver-auth=3,4");
+  write(4, "", 3, 4, true, false, false, "n --jobserver-auth=3,4");
+  write(5, "", 3, 4, false, false, false, "--jobserver-auth=3,4");
+  write(6, "d", 3, 4, false, false, false, "d --jobserver-auth=3,4");
+  write(7, "d", 3, 4, true, false, false, "nd --jobserver-auth=3,4");
+  write(8, "ni", 3, 4, false, false, false, "ni --jobserver-auth=3,4");
+  write(9, "ni", 3, 4, true, false, true, "kni --jobserver-auth=3,4");
+  write(10, "-- NAME=VALUE", 3, 4, false, false, false, " --jobserver-auth=3,4 -- NAME=VALUE");
+  write(11, "-- NAME=VALUE", 3, 4, false, true, true, "dk --jobserver-auth=3,4 -- NAME=VALUE");
+  write(12, "in -- NAME=VALUE", 3, 4, false, true, false, "din --jobserver-auth=3,4 -- NAME=VALUE");
 
   return EXIT_SUCCESS;
 }

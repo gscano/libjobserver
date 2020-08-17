@@ -3,7 +3,7 @@
 #include <errno.h> // errno
 #include <limits.h> // INT_MAX
 #include <stdio.h> // snprintf()
-#include <stdlib.h> // getenv(), setenv(), strtol()
+#include <stdlib.h> // getenv(), setenv(), malloc(), free(), strtol()
 #include <string.h> // strchr(), strstr()
 
 #define MAKEFLAGS "MAKEFLAGS"
@@ -11,35 +11,38 @@
 #define MAKEFLAGS_AUTH "--jobserver-auth"
 
 static inline
-bool search_for_char_in_first_word(char const * env, char c)
+char const * search_for_options_in_first_word(char const * env, bool target,
+					      bool * dry_run, bool * debug, bool * keep_going)
 {
-  bool found = false;
+  if(env[0] != '-')
+    {
+      while(*env != '\0' && *env != ' ')
+	{
+	  switch(*env)
+	    {
+	    case 'n': *dry_run = target; break;
+	    case 'd': *debug = target; break;
+	    case 'k': *keep_going = target; break;
+	    default : ;
+	    }
 
-  while(*env != '\0' && *env != ' ' && !found)
-    found = *env++ == c;
+	  ++env;
+	}
+    }
 
-  return found;
+  return env;
 }
 
 int jobserver_getenv(int * read_fd, int * write_fd,
 		     bool * dry_run, bool * debug, bool * keep_going)
 {
-  *read_fd = -1;
-  *write_fd = -1;
-  *dry_run = false;
-  *keep_going = false;
-  *debug = false;
-
+  *read_fd = *write_fd = -1;
+  *dry_run = *keep_going = *debug = false;
 
   char const * env = getenv(MAKEFLAGS);
   if(env == NULL) return 0;
 
-  if(env[0] != '-')
-    {
-      *dry_run = search_for_char_in_first_word(env, 'n');
-      *debug = search_for_char_in_first_word(env, 'd');
-      *keep_going = search_for_char_in_first_word(env, 'k');
-    }
+  search_for_options_in_first_word(env, true, dry_run, debug, keep_going);
 
   char const * fds = strstr(env, MAKEFLAGS_AUTH);
   if(fds == NULL) return 0;
@@ -65,8 +68,7 @@ int jobserver_getenv(int * read_fd, int * write_fd,
   return 0;
 
  error:
-  *read_fd = -1;
-  *write_fd = -1;
+  *read_fd = *write_fd = -1;
   errno = EBADF;
   return -1;
 }
@@ -74,57 +76,82 @@ int jobserver_getenv(int * read_fd, int * write_fd,
 int jobserver_setenv(int read_fd, int write_fd,
 		     bool dry_run, bool debug, bool keep_going)
 {
-  char const * env = getenv(MAKEFLAGS);
-  char const * n = "";
-  char const * d = "";
-  char const * k = "";
-  char const * split;
-  char const * end;
-  bool space = false;
+  char const * env, * word_end, * before, * j, * fds, * after, * end;
 
-  if(env == NULL)
-    {
-      env = "";
-      if(dry_run) n = "n";
-      if(debug) d = "d";
-      if(keep_going) k = "k";
-      if(dry_run || debug || keep_going) space = true;
-      split = end = env;
-    }
+  env = getenv(MAKEFLAGS);
+
+  if(env == NULL) env = word_end = before = j = fds = after = end = "";
   else
     {
-      end = env + strlen(env);
-      if(end != env || dry_run) space = true;
+      word_end = search_for_options_in_first_word(env, false,
+						  &dry_run, &debug, &keep_going);
 
-      if(dry_run && !search_for_char_in_first_word(env, 'n')) n = "n";
-      if(debug && !search_for_char_in_first_word(env, 'd')) d = "d";
-      if(keep_going && !search_for_char_in_first_word(env, 'k')) k = "k";
+      before = word_end;
+      j = strstr(word_end, "-j");
 
-      split = strstr(env, "-- ");
-      if(split == NULL)
-	split = end;
+      if(j == NULL) j = word_end;
+
+      fds = strstr(word_end, MAKEFLAGS_AUTH);
+
+      if(fds == NULL)
+	{
+	  fds = j;
+	  after = j;
+	}
+      else
+	{
+	  after = strchr(fds, ' ');
+
+	  if(after == NULL) after = word_end;
+	}
+
+      end = strchr(after, '\0');
     }
 
-  bool space2 = split - 1 >= env && split[-1] == ' ';
+  bool j1 = read_fd < 0 && write_fd < 0;
 
-#define JOBSERVER_PRINT_ENV(ptr, size)				\
-  snprintf(ptr, size, "%s%s%s%.*s%s"MAKEFLAGS_AUTH"=%d,%d%s%s",	\
-	   n, d, k, (int)(split - env - space2), env,		\
-	   space ? " " : "",					\
-	   read_fd, write_fd, split != end ? " " : "", split)
+#define JOBSERVER_PRINT(ptr, size)					\
+  snprintf(ptr, size, "%.*s%s%s%s",					\
+	   word_end - env, env,						\
+	   dry_run ? "n" : "", debug ? "d" : "", keep_going ? "k" : "")
 
-  const int size = JOBSERVER_PRINT_ENV(NULL, 0);
+  const int word_size = JOBSERVER_PRINT(NULL, 0);
+  char word[word_size + 1];
+  JOBSERVER_PRINT(word, word_size + 1);
 
-  if(size == -1) return -1;
+#undef JOBSERVER_PRINT
 
-  char buffer[size + 1];
+#define JOBSERVER_PRINT(ptr, size)					\
+  snprintf(ptr, size, MAKEFLAGS_AUTH"=%d,%d", read_fd, write_fd)
 
-  const int ssize = JOBSERVER_PRINT_ENV(buffer, size + 1);
+  const int jobserver_auth_size = j1 ? 0 : JOBSERVER_PRINT(NULL, 0);
+  char jobserver_auth[jobserver_auth_size + 1];
+  if(!j1)
+    JOBSERVER_PRINT(jobserver_auth, jobserver_auth_size + 1);
 
-#undef JOBSERVER_PRINT_ENV
+#undef JOBSERVER_PRINT
 
-  if(ssize == -1) return -1;
-  assert(ssize == size);
+  const int size = word_size + 1 + (fds - before) + jobserver_auth_size + (end - after) + 1;
+  char * buffer = malloc((size + 1) * sizeof(char));
+  snprintf(buffer, size + 1, "%s%s%.*s%s%s%s", word,
 
-  return setenv(MAKEFLAGS, buffer, 1);// errno: ENOMEM
+	   word_size > 0
+	   && jobserver_auth_size > 0
+	   && (!(fds > before) || before[fds - before - 1] != ' ') ? " " : "",
+
+	   j - before, before,
+
+	   read_fd > 0 && write_fd > 0 ? jobserver_auth : "",
+
+	   after < end
+	   && jobserver_auth_size > 0
+	   && *after != ' ' ? " " : "",
+
+	   after);
+
+  int ret = setenv(MAKEFLAGS, buffer, 1);// errno: ENOMEM
+
+  free(buffer);
+
+  return ret;
 }

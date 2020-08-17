@@ -48,7 +48,7 @@ void write(int id, const char * env,
 
   assert(jobserver_setenv(read, write, dry_run, debug, keep_going) == 0);
 
-  if(memcmp(getenv("MAKEFLAGS"), renv, strlen(getenv("MAKEFLAGS"))) != 0)
+  if(memcmp(getenv("MAKEFLAGS"), renv, strlen(renv)) != 0)
     {
       fprintf(stderr, "Incorrect environment: '%s' ('%s' expected)\n",
 	      getenv("MAKEFLAGS"), renv);
@@ -86,12 +86,22 @@ int main()
   write(4, "", 3, 4, true, false, false, "n --jobserver-auth=3,4");
   write(5, "", 3, 4, false, false, false, "--jobserver-auth=3,4");
   write(6, "d", 3, 4, false, false, false, "d --jobserver-auth=3,4");
-  write(7, "d", 3, 4, true, false, false, "nd --jobserver-auth=3,4");
+  write(7, "d", 3, 4, true, false, false, "dn --jobserver-auth=3,4");
   write(8, "ni", 3, 4, false, false, false, "ni --jobserver-auth=3,4");
-  write(9, "ni", 3, 4, true, false, true, "kni --jobserver-auth=3,4");
-  write(10, "-- NAME=VALUE", 3, 4, false, false, false, " --jobserver-auth=3,4 -- NAME=VALUE");
+  write(9, "ni", 3, 4, true, false, true, "nik --jobserver-auth=3,4");
+  write(10, "-- NAME=VALUE", 3, 4, false, false, false, "--jobserver-auth=3,4 -- NAME=VALUE");
   write(11, "-- NAME=VALUE", 3, 4, false, true, true, "dk --jobserver-auth=3,4 -- NAME=VALUE");
-  write(12, "in -- NAME=VALUE", 3, 4, false, true, false, "din --jobserver-auth=3,4 -- NAME=VALUE");
+  write(12, "in -- NAME=VALUE", 3, 4, false, true, false, "ind --jobserver-auth=3,4 -- NAME=VALUE");
+  write(13, "i --long-option -- NAME=VALUE", 3, 4, true, true, true,
+	"indk --jobserver-auth=3,4 --long-option -- NAME=VALUE");
+  write(14, "i --long-option -j4 --jobserver-auth=1,2 -- NAME=VALUE", 3, 4, true, true, true,
+	"indk --long-option --jobserver-auth=3,4 -- NAME=VALUE");
+  write(15, "i", -1, -1, false, true, true, "idk");
+  write(16, "-j4 --jobserver-auth=1,2", -1, -1, false, false, false, "");
+  write(17, "-j4 --jobserver-auth=1,2", 3, 4, false, false, false, "--jobserver-auth=3,4");
+  write(18, "i -j4 --jobserver-auth=1,2", 3, 4, false, true, false, "id --jobserver-auth=3,4");
+  write(19, "i -j1 --long-option -- NAME=VALUE", -1, -1, false, false, false,
+	"i -j1 --long-option -- NAME=VALUE");
 
   return EXIT_SUCCESS;
 }

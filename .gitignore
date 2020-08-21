@@ -3,6 +3,7 @@ config.mk
 *.o
 *.d
 
-env
+tst/env
+tst/init
 
 *~

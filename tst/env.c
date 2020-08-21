@@ -60,6 +60,11 @@ void write(int id, const char * env,
 
 int main()
 {
+  char const * env = getenv("MAKEFLAGS");
+  if(env == NULL) env = "";
+  char env_[strlen(env) + 1];
+  strcpy(env_, env);
+
   read(1, NULL, -1, -1, false, 0);
   read(2, "", -1, -1, false, 0);
   read(3, "n", -1, -1, true, 0);
@@ -102,6 +107,8 @@ int main()
   write(18, "i -j4 --jobserver-auth=1,2", 3, 4, false, true, false, "id --jobserver-auth=3,4");
   write(19, "i -j1 --long-option -- NAME=VALUE", -1, -1, false, false, false,
 	"i -j1 --long-option -- NAME=VALUE");
+
+  setenv("MAKEFLAGS", env_, 1);
 
   return EXIT_SUCCESS;
 }

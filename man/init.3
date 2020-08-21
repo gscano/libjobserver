@@ -1,0 +1,84 @@
+.TH JOBSERVER 3
+
+.SH NAME
+jobserver_connect, jobserver_create, jobserver_create_n, jobserver_close - connect to, create and quit a jobserver
+
+.SH SYNOPSIS
+.nf
+#include <jobserver.h>
+.sp
+.B "int jobserver_connect(struct jobserver * \fIjs\fP);"
+
+.B "int jobserver_create  (struct jobserver * \fIjs\fP, size_t \fIsize\fP, char \fItoken\fP);"
+.B "int jobserver_create_n(struct jobserver * \fIjs\fP, char const * \fItokens\fP);"
+
+.B "int jobserver_close(struct jobserver * \fIjs\fP);"
+
+.SH DESCRIPTION
+
+The
+.BR jobserver_connect ()
+function tries to connect to an environment-defined jobserver.
+
+The
+.BR jobserver_create ()
+and
+.BR jobserver_create_n ()
+functions create a new jobserver and publish it to the environment.
+The jobserver is initialized with either \fIsize\fP \fItoken\fPs or with a
+null-terminated word of \fItokens\fP.
+
+The
+.BR jobserver_close ()
+function closes the jobserver and removes it from the environment.
+
+.SH RETURN VALUE
+
+On success, the \fBjobserver_create\fP() and \fBjobserver_create_n\fP() functions
+return the number of tokens available in the pipe of the new jobserver plus one;
+that is \fIsize\fP + 1 or strlen(\fItokens\fP) + 1 (see \fBjobserver\fP(7)).
+On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
+
+On success, the \fBjobserver_open\fP() and \fBjobserver_close\fP() functions return \fB0\fP.
+On error, they return \fB-1\fP and \fIerrno\fP is set accordingly.
+
+.SH ERROR
+
+.TP
+.B EACCES
+(\fBjobserver_connect\fP()) The jobserver pipe is closed because the current
+process was spawned by Make without the \(cq+\(cq prefix, see
+section 13.1.1 of the
+.UR https://www.gnu.org/software/make/
+GNU Make documentation
+.UE .
+
+.TP
+.B EBADF
+(\fBjobserver_connect\fP())
+The jobserver file descriptors could not be contacted.
+
+.TP
+.B EINVAL
+(\fBjobserver_create\fP() and \fBjobserver_create_n\fP())
+The number of tokens in the pipe exceeds PIPE_BUF.
+
+.TP
+.B EMFILE
+(\fBjobserver_create\fP() and \fBjobserver_create_n\fP())
+Too many file descriptors for the process.
+
+.TP
+.B ENFILE
+(\fBjobserver_create\fP() and \fBjobserver_create_n\fP())
+Too many file descriptors for the system.
+
+.TP
+.B ENOMEM
+(\fBjobserver_create\fP(), \fBjobserver_create_n\fP(), and \fBjobserver_close\fP())
+Not enough memory to set the environment variable.
+
+.SH SEE ALSO
+.BR jobserver (7),
+.BR jobserver_getenv (3),
+.BR jobserver_setenv (3)

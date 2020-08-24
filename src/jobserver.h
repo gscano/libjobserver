@@ -9,6 +9,8 @@ int jobserver_getenv(int * read_fd, int * write_fd,
 int jobserver_setenv(int read_fd, int write_fd,
 		     bool dry_run, bool debug, bool keep_going);
 
+#define JOBSERVER_FREE_TOKEN (char)0
+
 struct jobserver
 {
   bool dry_run;

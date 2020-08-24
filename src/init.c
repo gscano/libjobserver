@@ -7,27 +7,9 @@
 #include <string.h> // memset(), strlen()
 #include <unistd.h> // pipe()
 
-static inline
-int write_fd(int fd, const char * buf, size_t count)
-{
-  int ret;
-
-  // Atomic if count <= PIPE_BUF (see pipe(7))
-  while((ret = write(fd, buf, count)) == -1 && errno == EINTR) continue;
-
-  return ret;
-}
-
-static inline
-void close_fd(int fd)
-{
-  int errno_ = errno;
-  int ret;
-
-  while((ret = close(fd)) == -1 && errno == EINTR) continue;
-
-  errno = errno_;
-}
+// internal.c
+extern int write_to_pipe(int fd, const char * buf, size_t count);
+extern void close_pipe_end(int fd);
 
 int jobserver_connect(struct jobserver * js)
 {
@@ -82,7 +64,7 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       js->read = pipefds[0];
       js->write = pipefds[1];
 
-      if(write_fd(js->write, tokens, size) == -1)
+      if(write_to_pipe(js->write, tokens, size) == -1)
 	goto error_close_fds;
     }
   else
@@ -109,13 +91,13 @@ int jobserver_close(struct jobserver * js)
 {
   if(js->read != -1)
     {
-      close_fd(js->read);
+      close_pipe_end(js->read);
       js->read = -1;
     }
 
   if(js->write != -1)
     {
-      close_fd(js->write);
+      close_pipe_end(js->write);
       js->write = -1;
     }
 

@@ -13,14 +13,13 @@ tst/%.o: tst/%.c
 tst/env: tst/env.o src/env.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
-tst/init: tst/init.o src/init.o src/env.o
+tst/init: tst/init.o src/init.o src/env.o src/internal.o
 	$(CC) $^ -o $@ $(CFLAGS)
 
 clean:
-	rm -f src/env.d src/env.o
-	rm -f src/init.d src/init.o
-	rm -f tst/env.d tst/env.o tst/env
-	rm -f tst/init.d tst/init.o tst/init
+	rm -f src/*.d src/*.o
+	rm -f tst/*.d tst/*.o
+	rm -f tst/env tst/init
 
 distclean: clean
 	rm -f `find . -name '*~'`

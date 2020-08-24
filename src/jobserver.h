@@ -4,10 +4,10 @@
 #include <stdbool.h>
 #include <stddef.h> // size_t
 
-int jobserver_getenv(int * read_fd, int * write_fd,
-		     bool * dry_run, bool * debug, bool * keep_going);
-int jobserver_setenv(int read_fd, int write_fd,
-		     bool dry_run, bool debug, bool keep_going);
+int jobserver_getenv_(int * read_fd, int * write_fd,
+		      bool * dry_run, bool * debug, bool * keep_going);
+int jobserver_setenv_(int read_fd, int write_fd,
+		      bool dry_run, bool debug, bool keep_going);
 
 #define JOBSERVER_FREE_TOKEN (char)0
 
@@ -22,6 +22,10 @@ struct jobserver
   int read;
   int write;
 };
+
+int jobserver_getenv(struct jobserver * js);
+int jobserver_setenv(struct jobserver const * js);
+int jobserver_unsetenv(struct jobserver const * js);
 
 int jobserver_connect(struct jobserver * js);
 int jobserver_create(struct jobserver * js, size_t size, char token);

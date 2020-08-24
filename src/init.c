@@ -13,8 +13,7 @@ extern void close_pipe_end(int fd);
 
 int jobserver_connect(struct jobserver * js)
 {
-  if(jobserver_getenv(&js->read, &js->write,
-		      &js->dry_run, &js->debug, &js->keep_going) == -1)
+  if(jobserver_getenv(js) == -1)
     return -1;// errno: EBADF
 
   if(js->read != -1 && js->write != -1)
@@ -73,8 +72,7 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       js->write = -1;
     }
 
-  if(jobserver_setenv(js->read, js->write,
-		      js->dry_run, js->debug, js->keep_going) == -1)
+  if(jobserver_setenv(js) == -1)
     goto error_close_fds;// errno: ENOMEM
 
   js->has_free_token = true;
@@ -103,5 +101,5 @@ int jobserver_close(struct jobserver * js)
 
   js->has_free_token = false;
 
-  return jobserver_setenv(-1, -1, js->dry_run, js->debug, js->keep_going);
+  return jobserver_unsetenv(js);
 }

@@ -6,6 +6,8 @@
 #include <stdlib.h> // getenv(), setenv(), malloc(), free(), strtol()
 #include <string.h> // strchr(), strstr()
 
+#include "jobserver.h"
+
 #define MAKEFLAGS "MAKEFLAGS"
 
 #define MAKEFLAGS_AUTH "--jobserver-auth"
@@ -33,8 +35,8 @@ char const * search_for_options_in_first_word(char const * env, bool target,
   return env;
 }
 
-int jobserver_getenv(int * read_fd, int * write_fd,
-		     bool * dry_run, bool * debug, bool * keep_going)
+int jobserver_getenv_(int * read_fd, int * write_fd,
+		      bool * dry_run, bool * debug, bool * keep_going)
 {
   *read_fd = *write_fd = -1;
   *dry_run = *keep_going = *debug = false;
@@ -73,8 +75,8 @@ int jobserver_getenv(int * read_fd, int * write_fd,
   return -1;
 }
 
-int jobserver_setenv(int read_fd, int write_fd,
-		     bool dry_run, bool debug, bool keep_going)
+int jobserver_setenv_(int read_fd, int write_fd,
+		      bool dry_run, bool debug, bool keep_going)
 {
   char const * env, * word_end, * before, * j, * fds, * after, * end;
 
@@ -154,4 +156,22 @@ int jobserver_setenv(int read_fd, int write_fd,
   free(buffer);
 
   return ret;
+}
+
+int jobserver_getenv(struct jobserver * js)
+{
+  return jobserver_getenv_(&js->read, &js->write,
+			   &js->dry_run, &js->debug, &js->keep_going);
+}
+
+int jobserver_setenv(struct jobserver const * js)
+{
+  return jobserver_setenv_(js->read, js->write,
+			   js->dry_run, js->debug, js->keep_going);
+}
+
+int jobserver_unsetenv(struct jobserver const * js)
+{
+  return jobserver_setenv_(-1, -1,
+			   js->dry_run, js->debug, js->keep_going);
 }

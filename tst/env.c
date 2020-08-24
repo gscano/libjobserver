@@ -19,7 +19,7 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
   bool debug_;
   bool keep_going_;
 
-  int status = jobserver_getenv(&read_, &write_, &dry_run_, &debug_, &keep_going_);
+  int status = jobserver_getenv_(&read_, &write_, &dry_run_, &debug_, &keep_going_);
 
   if(status != ret)
     {
@@ -46,7 +46,7 @@ void write(int id, const char * env,
 
   printf("Test #%d\n", id);
 
-  assert(jobserver_setenv(read, write, dry_run, debug, keep_going) == 0);
+  assert(jobserver_setenv_(read, write, dry_run, debug, keep_going) == 0);
 
   if(memcmp(getenv("MAKEFLAGS"), renv, strlen(renv)) != 0)
     {

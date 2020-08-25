@@ -143,7 +143,7 @@ int jobserver_setenv_(int read_fd, int write_fd,
 
 	   j - before, before,
 
-	   read_fd > 0 && write_fd > 0 ? jobserver_auth : "",
+	   read_fd >= 0 && write_fd >= 0 ? jobserver_auth : "",
 
 	   after < end
 	   && jobserver_auth_size > 0

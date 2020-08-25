@@ -4,15 +4,16 @@
 jobserver_connect, jobserver_create, jobserver_create_n, jobserver_close - connect to, create and quit a jobserver
 
 .SH SYNOPSIS
-.nf
-#include <jobserver.h>
-.sp
-.B "int jobserver_connect(struct jobserver * \fIjs\fP);"
 
-.B "int jobserver_create  (struct jobserver * \fIjs\fP, size_t \fIsize\fP, char \fItoken\fP);"
-.B "int jobserver_create_n(struct jobserver * \fIjs\fP, char const * \fItokens\fP);"
+.B #include <jobserver.h>
 
-.B "int jobserver_close(struct jobserver * \fIjs\fP);"
+.B int jobserver_connect(struct jobserver * \fIjs\fP);
+
+.B int jobserver_create  (struct jobserver * \fIjs\fP, size_t \fIsize\fP, char \fItoken\fP);
+.br
+.B int jobserver_create_n(struct jobserver * \fIjs\fP, char const * \fItokens\fP);
+
+.B int jobserver_close(struct jobserver * \fIjs\fP);
 
 .SH DESCRIPTION
 
@@ -52,33 +53,30 @@ section 13.1.1 of the
 .UR https://www.gnu.org/software/make/
 GNU Make documentation
 .UE .
-
 .TP
 .B EBADF
 (\fBjobserver_connect\fP())
 The jobserver file descriptors could not be contacted.
-
 .TP
 .B EINVAL
 (\fBjobserver_create\fP() and \fBjobserver_create_n\fP())
 The number of tokens in the pipe exceeds PIPE_BUF.
-
 .TP
 .B EMFILE
 (\fBjobserver_create\fP() and \fBjobserver_create_n\fP())
 Too many file descriptors for the process.
-
 .TP
 .B ENFILE
 (\fBjobserver_create\fP() and \fBjobserver_create_n\fP())
 Too many file descriptors for the system.
-
 .TP
 .B ENOMEM
 (\fBjobserver_create\fP(), \fBjobserver_create_n\fP(), and \fBjobserver_close\fP())
 Not enough memory to set the environment variable.
 
 .SH SEE ALSO
+
 .BR jobserver (7),
 .BR jobserver_getenv (3),
-.BR jobserver_setenv (3)
+.BR jobserver_setenv (3),
+.BR jobserver_unsetenv (3)

@@ -1,6 +1,7 @@
 .TH JOBSERVER 7
 
 .SH NAME
+
 Jobserver - Build automation jobserver
 
 .SH DESCRIPTION
@@ -11,6 +12,46 @@ application compatible with
 GNU Make
 .UE .
 
+.B #include <jobserver.h>
+
+.EX
+struct jobserver
+{
+    bool dry_run;
+    bool debug;
+    bool keep_going;
+
+    ...
+};
+.EE
+
+.SH ENVIRONMENT
+
+According to section 13.1.1 of the
+.UR https://www.gnu.org/software/make/
+GNU Make documentation
+.UE ,
+the jobserver token pipe is passed from one build process to the other
+with the
+.B MAKEFLAGS
+environment variable.
+
+The letters \(aqn\(aq, \(aqd\(aq and \(aqk\(aq,
+corresponding respectively to the \fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP
+options, are looked up or inserted in the first word of this variable.
+
+The string
+.B --jobserver-auth=
+is followed by a pair, separated by a comma (\(aq,\(aq), of file descriptors
+corresponding to the read and write sides of the token pipe.
+
+
 .SH SEE ALSO
+
+.BR jobserver_close (3),
+.BR jobserver_connect (3),
+.BR jobserver_create (3),
+.BR jobserver_create_n (3),
 .BR jobserver_getenv (3),
-.BR jobserver_setenv (3)
+.BR jobserver_setenv (3),
+.BR jobserver_unsetenv(3)

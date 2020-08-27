@@ -14,7 +14,7 @@ extern int release_jobserver_token(struct jobserver * js, char token);
 
 // init.c
 extern sigset_t jobserver_sigchld(int how);
-extern int jobserver_close(struct jobserver * js);
+extern int jobserver_close_(struct jobserver * js);
 
 struct jobserver_job
 {
@@ -24,7 +24,7 @@ struct jobserver_job
   void * data;
 };
 
-int jobserver_launch_job(struct jobserver * js, void * data,
+int jobserver_launch_job(struct jobserver * js, bool inherit, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done)
 {
   char token;
@@ -47,9 +47,8 @@ int jobserver_launch_job(struct jobserver * js, void * data,
     }
   else if(job->pid == 0)
     {
-      jobserver_sigchld(SIG_UNBLOCK);
-      close(js->poll[0].fd);
-      exit(func(data, js->dry_run, js->debug, js->keep_going));
+      jobserver_close_(js, inherit);
+      exit(func(data));
     }
   else
     {

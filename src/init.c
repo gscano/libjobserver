@@ -76,6 +76,7 @@ int jobserver_connect(struct jobserver * js)
     }
 
   js->has_free_token = true;
+
   js->poll[1].fd = js->read;
 
   return 0;
@@ -138,30 +139,27 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   return -1;
 }
 
-int jobserver_close(struct jobserver * js)
+void jobserver_close_(struct jobserver * js, bool keep)
 {
-  if(js->read != -1)
+  if(!keep)
     {
       close_pipe_end(js->read);
-      js->read = -1;
-    }
-
-  if(js->write != -1)
-    {
       close_pipe_end(js->write);
-      js->write = -1;
     }
-
-  js->has_free_token = false;
 
   if(js->jobs != NULL)
-    {
-      free(js->jobs);
-      js->jobs = NULL;
-    }
+    free(js->jobs);
 
   jobserver_sigchld(SIG_UNBLOCK);
   close(js->poll[0].fd);
+}
 
-  return jobserver_unsetenv(js);
+int jobserver_close(struct jobserver * js)
+{
+  if(js->current_jobs > 0)
+    return -1;
+
+  jobserver_close_(js, false);
+
+  return 0;
 }

@@ -4,6 +4,8 @@
 extern int write_to_pipe(int fd, const char * buf, size_t count);
 extern int read_from_pipe(int fd, char * token);
 
+#define JOBSERVER_FREE_TOKEN (char)0
+
 int acquire_jobserver_token(struct jobserver * js, char * token)
 {
   if(js->has_free_token)

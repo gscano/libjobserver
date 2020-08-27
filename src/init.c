@@ -4,6 +4,7 @@
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
 #include <limits.h> // PIPE_BUF
+#include <stdlib.h> // free()
 #include <string.h> // memset(), strlen()
 #include <unistd.h> // pipe()
 
@@ -11,8 +12,21 @@
 extern int write_to_pipe(int fd, const char * buf, size_t count);
 extern void close_pipe_end(int fd);
 
+static inline
+void jobserver_init(struct jobserver * js)
+{
+  js->read = js->write = -1;
+
+  js->has_free_token = false;
+
+  js->current_jobs = js->max_jobs = 0;
+  js->jobs = NULL;
+}
+
 int jobserver_connect(struct jobserver * js)
 {
+  jobserver_init(js);
+
   if(jobserver_getenv(js) == -1)
     return -1;// errno: EBADF
 
@@ -50,6 +64,8 @@ int jobserver_create_n(struct jobserver * js, char const * tokens)
 
 int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
 {
+  jobserver_init(js);
+
   if(size > PIPE_BUF)
     {
       errno = EINVAL;
@@ -100,6 +116,12 @@ int jobserver_close(struct jobserver * js)
     }
 
   js->has_free_token = false;
+
+  if(js->jobs != NULL)
+    {
+      free(js->jobs);
+      js->jobs = NULL;
+    }
 
   return jobserver_unsetenv(js);
 }

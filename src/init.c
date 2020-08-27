@@ -4,8 +4,10 @@
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
 #include <limits.h> // PIPE_BUF
+#include <signal.h> // sigaddset(), sigemptyset(), sigprocmask()
 #include <stdlib.h> // free()
 #include <string.h> // memset(), strlen()
+#include <sys/signalfd.h> // signalfd()
 #include <unistd.h> // pipe()
 
 // internal.c
@@ -13,7 +15,20 @@ extern int write_to_pipe(int fd, const char * buf, size_t count);
 extern void close_pipe_end(int fd);
 
 static inline
-void jobserver_init(struct jobserver * js)
+sigset_t jobserver_sigchld(int how)
+{
+  sigset_t sigchld;
+
+  assert(sigemptyset(&sigchld) == 0);
+  assert(sigaddset(&sigchld, SIGCHLD) == 0);
+
+  assert(sigprocmask(how, &sigchld, NULL) == 0);
+
+  return sigchld;
+}
+
+static inline
+int jobserver_init(struct jobserver * js)
 {
   js->read = js->write = -1;
 
@@ -21,11 +36,35 @@ void jobserver_init(struct jobserver * js)
 
   js->current_jobs = js->max_jobs = 0;
   js->jobs = NULL;
+
+  js->poll[0].events = js->poll[1].events = POLLIN;
+
+  sigset_t sigchld = jobserver_sigchld(SIG_BLOCK);
+
+  js->poll[0].fd = signalfd(-1, &sigchld, 0);
+  js->poll[1].fd = -1;
+
+  if(js->poll[0].fd == -1)
+    goto unblock_sigchld;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
+
+  if(fcntl(js->poll[0].fd, F_SETFD, O_CLOEXEC) == -1)
+    goto close_signalfd;
+
+  return 0;
+
+ close_signalfd:
+  close(js->poll[0].fd);
+
+ unblock_sigchld:
+  jobserver_sigchld(SIG_UNBLOCK);
+
+  return -1;
 }
 
 int jobserver_connect(struct jobserver * js)
 {
-  jobserver_init(js);
+  if(jobserver_init(js) == -1)
+    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
   if(jobserver_getenv(js) == -1)
     return -1;// errno: EBADF
@@ -37,6 +76,7 @@ int jobserver_connect(struct jobserver * js)
     }
 
   js->has_free_token = true;
+  js->poll[1].fd = js->read;
 
   return 0;
 
@@ -64,7 +104,8 @@ int jobserver_create_n(struct jobserver * js, char const * tokens)
 
 int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
 {
-  jobserver_init(js);
+  if(jobserver_init(js) == -1)
+    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
   if(size > PIPE_BUF)
     {
@@ -78,14 +119,10 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       if(pipe(pipefds) == -1) return -1;// errno: EMFILE, ENFILE
       js->read = pipefds[0];
       js->write = pipefds[1];
+      js->poll[1].fd = js->read;
 
       if(write_to_pipe(js->write, tokens, size) == -1)
 	goto error_close_fds;
-    }
-  else
-    {
-      js->read = -1;
-      js->write = -1;
     }
 
   if(jobserver_setenv(js) == -1)
@@ -122,6 +159,9 @@ int jobserver_close(struct jobserver * js)
       free(js->jobs);
       js->jobs = NULL;
     }
+
+  jobserver_sigchld(SIG_UNBLOCK);
+  close(js->poll[0].fd);
 
   return jobserver_unsetenv(js);
 }

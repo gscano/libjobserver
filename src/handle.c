@@ -2,6 +2,7 @@
 
 #include <assert.h> // assert()
 #include <errno.h> // errno
+#include <signal.h> // kill()
 #include <string.h> // memcpy()
 #include <stdlib.h> // exit(), realloc()
 #include <sys/wait.h> // waitpid()
@@ -12,6 +13,7 @@ extern int acquire_jobserver_token(struct jobserver * js, char * token);
 extern int release_jobserver_token(struct jobserver * js, char token);
 
 // init.c
+extern sigset_t jobserver_sigchld(int how);
 extern int jobserver_close(struct jobserver * js);
 
 struct jobserver_job
@@ -45,6 +47,8 @@ int jobserver_launch_job(struct jobserver * js, void * data,
     }
   else if(job->pid == 0)
     {
+      jobserver_sigchld(SIG_UNBLOCK);
+      close(js->poll[0].fd);
       exit(func(data, js->dry_run, js->debug, js->keep_going));
     }
   else
@@ -65,10 +69,20 @@ int jobserver_launch_job(struct jobserver * js, void * data,
   return -1;
 }
 
+static inline
+struct jobserver_job * jobserver_find_job(struct jobserver * js, pid_t pid)
+{
+  for(size_t i = 0; i < js->current_jobs; ++i)
+    if(js->jobs[i].pid == pid)
+      return &js->jobs[i];
+
+  return NULL;
+}
+
 int jobserver_terminate_job(struct jobserver * js, char * token)
 {
   int status;
-  int pid = waitpid(-1, &status, WNOHANG);
+  pitd_t pid = waitpid(-1, &status, WNOHANG);
 
   assert(pid != 0);
   if(pid == -1)
@@ -77,18 +91,13 @@ int jobserver_terminate_job(struct jobserver * js, char * token)
       return -1;
     }
 
-  struct jobserver_job * job = NULL;
+  struct jobserver_job * job = jobserver_find_job(js, pid);
 
-  for(size_t i = 0; i < js->current_jobs; ++i)
+  if(job == NULL)
     {
-      if(js->jobs[i].pid == pid)
-	{
-	  job = &js->jobs[i];
-	  break;
-	}
+      errno = ECHILD;
+      return -1;
     }
-
-  assert(job != NULL);
 
   job->done(job->data, status);
 
@@ -107,6 +116,20 @@ int jobserver_terminate_job(struct jobserver * js, char * token)
     }
 
   js->current_jobs--;
+
+  return 0;
+}
+
+int jobserver_clear(struct jobserver * js)
+{
+  for(size_t i = 0; 0 < js->current_jobs; ++i)
+    {
+      struct jobserver_job * job = &js->jobs[js->current_jobs - 1];
+
+      if(kill(job->pid, SIGKILL) == -1) return -1;
+
+      js->current_jobs--;
+    }
 
   return 0;
 }

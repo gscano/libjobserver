@@ -45,4 +45,8 @@ int jobserver_launch_job(struct jobserver * js, bool inherit, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done);
 int jobserver_wait(struct jobserver * js, int timeout);
 
+int jobserver_print(FILE * stream, struct jobserver const * js,
+		    const char * separator, const char * job_separator,
+		    const char * inter_job_separator);
+
 #endif/*LIBJOBSERVER_H*/

@@ -8,6 +8,8 @@ struct jobserver_job
   void * data;
 };
 
+#define JOBSERVER_FREE_TOKEN (char)0
+
 // init.c
 extern sigset_t jobserver_sigchld(int how);
 extern void jobserver_close_(struct jobserver * js, bool inherit);

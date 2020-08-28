@@ -20,7 +20,7 @@ int begin(void * data_)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "launch %d\n", data->id);
+  fprintf(stderr, "launch job #%d\n", data->id);
 
   sleep(data->sleep);
 
@@ -33,7 +33,9 @@ void end(void * data_, int status)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "%d terminates with %d\n", data->id, status);
+  fprintf(stderr, "job #%d terminates with status %d\n", data->id, WEXITSTATUS(status));
+
+  assert(WEXITSTATUS(status) == data->ret);
 }
 
 int main()
@@ -41,23 +43,42 @@ int main()
   assert(pipe(pipefd) == 0);
 
   struct jobserver js;
-  struct data data;
-  char token;
+  char token = 0;
 
-  assert(jobserver_create(&js, 3, 't') != -1);
+  {
+    assert(jobserver_create(&js, 1, 't') == 2);
+    assert(jobserver_terminate_job(&js, &token) == -1);
+    assert(jobserver_close(&js) == 0);
+  }
 
-  assert(jobserver_terminate_job(&js, &token) == -1);
+  {
+    struct data data = {1, 1, 1};
+    assert(jobserver_create(&js, 2, 't') == 3);
+    assert(jobserver_launch_job(&js, true, &data, begin, end) == 0);
+    assert(jobserver_terminate_job(&js, &token) == -1 && errno == ECHILD);
+    assert(jobserver_close(&js) == -1);
+    assert(read(pipefd[0], &token, 1) == 1);
+    sleep(1);
+    assert(jobserver_terminate_job(&js, &token) == 0);
+    assert(token == JOBSERVER_FREE_TOKEN);
+    assert(jobserver_close(&js) == 0);
+  }
 
-  data.id = 1;
-  data.sleep = 1;
-  data.ret = 1;
-  assert(jobserver_launch_job(&js, true, &data, begin, end) == 0);
-  assert(jobserver_terminate_job(&js, &token) == -1 && errno == ECHILD);
-  assert(jobserver_close(&js) == -1);
-  assert(read(pipefd[0], &token, 1) == 1);
-  sleep(1);
-  assert(jobserver_terminate_job(&js, &token) == 0);
-  assert(jobserver_close(&js) == 0);
+  {
+    struct data data1 = {2, 1, 1};
+    struct data data2 = {3, 3, 2};
+    assert(jobserver_create(&js, 3, 't') == 4);
+    assert(jobserver_launch_job(&js, true, &data1, begin, end) == 0);
+    assert(jobserver_launch_job(&js, true, &data2, begin, end) == 0);
+    assert(read(pipefd[0], &token, 1) == 1);
+    sleep(1);
+    assert(jobserver_terminate_job(&js, &token) == 0);
+    assert(token == JOBSERVER_FREE_TOKEN);
+    sleep(3);
+    assert(jobserver_terminate_job(&js, &token) == 0);
+    assert(token == 't');
+    assert(jobserver_close(&js) == 0);
+  }
 
   close(pipefd[0]);
   close(pipefd[1]);

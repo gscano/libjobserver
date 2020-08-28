@@ -18,17 +18,17 @@ int jobserver_launch_job(struct jobserver * js, bool inherit, void * data,
   if(js->current_jobs == js->max_jobs)
     {
       js->jobs = realloc(js->jobs, (2 * js->max_jobs + 1) * sizeof(struct jobserver_job));
-      if(js->jobs == NULL) goto error;
+      if(js->jobs == NULL) goto error;// errno: ENOMEM
       js->max_jobs = 2 * js->max_jobs + 1;
     }
 
   struct jobserver_job * job = &js->jobs[js->current_jobs];
 
-  job->pid = fork();// errno: EAGAIN, ENOMEM
+  job->pid = fork();
 
   if(job->pid == -1)
     {
-      goto error;
+      goto error;// errno: EAGAIN, ENOMEM
     }
   else if(job->pid == 0)
     {
@@ -68,12 +68,7 @@ int jobserver_terminate_job(struct jobserver * js, char * token)
   int status;
   pid_t pid = waitpid(-1, &status, WNOHANG);
 
-  assert(pid != 0);
-  if(pid == -1)
-    {
-      assert(errno != ECHILD);
-      return -1;
-    }
+  if(pid <= 0) return -1;// errno: ECHILD
 
   struct jobserver_job * job = jobserver_find_job(js, pid);
 

@@ -1,5 +1,8 @@
 #include <stdio.h> // fprintf()
 
+#include "jobserver.h"
+#include "internal.h"
+
 int jobserver_print_job(FILE * stream, struct jobserver_job job, const char * separator)
 {
   return fprintf(stream,

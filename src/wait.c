@@ -1,16 +1,14 @@
+#include <assert.h> // assert()
+#include <errno.h> // errno
+
 #include "jobserver.h"
-
-// internal.c
-extern int read_from_pipe(int fd, char * token);
-
-// handle.c
-extern int jobserver_terminate_job(struct jobserver * js, char * token);
+#include "internal.h"
 
 int jobserver_wait_(struct jobserver * js, int timeout, char * token)
 {
   int status;
 
-  while((status = poll(js->jobs, 1 + token == NULL, timeout)) == -1 && errno == EINVAL) continue;
+  while((status = poll(&js->poll[0], 1 + token == NULL, timeout)) == -1 && errno == EINVAL) continue;
 
   if(status == -1) return -1;// errno: ENOMEM
 

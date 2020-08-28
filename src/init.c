@@ -1,5 +1,3 @@
-#include "jobserver.h"
-
 #include <assert.h> // assert()
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
@@ -10,11 +8,9 @@
 #include <sys/signalfd.h> // signalfd()
 #include <unistd.h> // pipe()
 
-// internal.c
-extern int write_to_pipe(int fd, const char * buf, size_t count);
-extern void close_pipe_end(int fd);
+#include "jobserver.h"
+#include "internal.h"
 
-static inline
 sigset_t jobserver_sigchld(int how)
 {
   sigset_t sigchld;

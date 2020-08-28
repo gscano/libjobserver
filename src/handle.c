@@ -1,5 +1,3 @@
-#include "jobserver.h"
-
 #include <assert.h> // assert()
 #include <errno.h> // errno
 #include <signal.h> // kill()
@@ -8,21 +6,8 @@
 #include <sys/wait.h> // waitpid()
 #include <unistd.h> // fork()
 
-// token.c
-extern int acquire_jobserver_token(struct jobserver * js, char * token);
-extern int release_jobserver_token(struct jobserver * js, char token);
-
-// init.c
-extern sigset_t jobserver_sigchld(int how);
-extern int jobserver_close_(struct jobserver * js);
-
-struct jobserver_job
-{
-  char token;
-  pid_t pid;
-  jobserver_callback_return_t done;
-  void * data;
-};
+#include "jobserver.h"
+#include "internal.h"
 
 int jobserver_launch_job(struct jobserver * js, bool inherit, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done)
@@ -81,7 +66,7 @@ struct jobserver_job * jobserver_find_job(struct jobserver * js, pid_t pid)
 int jobserver_terminate_job(struct jobserver * js, char * token)
 {
   int status;
-  pitd_t pid = waitpid(-1, &status, WNOHANG);
+  pid_t pid = waitpid(-1, &status, WNOHANG);
 
   assert(pid != 0);
   if(pid == -1)

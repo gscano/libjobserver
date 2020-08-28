@@ -4,7 +4,7 @@
 #include <poll.h> // struct pollfd
 #include <stdbool.h>
 #include <stddef.h> // size_t
-#include <sys/types.h> // pid_t
+#include <stdio.h> // FILE
 
 int jobserver_getenv_(int * read_fd, int * write_fd,
 		      bool * dry_run, bool * debug, bool * keep_going);

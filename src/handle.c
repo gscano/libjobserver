@@ -13,7 +13,7 @@ int jobserver_launch_job(struct jobserver * js, bool inherit, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done)
 {
   char token;
-  if(acquire_jobserver_token(js, &token) == -1) return -1;
+  if(acquire_jobserver_token(js, &token) != 1) return -1;
 
   if(js->current_jobs == js->max_jobs)
     {
@@ -72,17 +72,13 @@ int jobserver_terminate_job(struct jobserver * js, char * token)
 
   struct jobserver_job * job = jobserver_find_job(js, pid);
 
-  if(job == NULL)
-    {
-      errno = ECHILD;
-      return -1;
-    }
+  if(job == NULL) return pid;
 
   job->done(job->data, status);
 
   if(token == NULL)
     {
-      if(release_jobserver_token(js, job->token) == -1) return -1;
+      release_jobserver_token(js, job->token);
     }
   else
     {

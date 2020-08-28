@@ -1,5 +1,7 @@
 #include <sys/types.h> // pid_t
 
+#include "jobserver.h"
+
 struct jobserver_job
 {
   char token;
@@ -25,3 +27,6 @@ extern int jobserver_terminate_job(struct jobserver * js, char * token);
 // token.c
 extern int acquire_jobserver_token(struct jobserver * js, char * token);
 extern int release_jobserver_token(struct jobserver * js, char token);
+
+// wait.c
+extern int jobserver_wait_(struct jobserver * js, int timeout, char * token);

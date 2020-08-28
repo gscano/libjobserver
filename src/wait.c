@@ -4,36 +4,41 @@
 #include "jobserver.h"
 #include "internal.h"
 
-int jobserver_wait_(struct jobserver * js, int timeout, char * token)
+int jobserver_poll_on_sigchld(bool and_token, struct pollfd * fds, int timeout)
 {
   int status;
 
-  while((status = poll(&js->poll[0], 1 + token == NULL, timeout)) == -1 && errno == EINVAL) continue;
+  while((status = poll(fds, 1 + and_token, timeout)) == -1 && errno == EINVAL)
+    continue;
 
-  if(status == -1) return -1;// errno: ENOMEM
+  return status;
+}
 
-  if(js->poll[0].revents & POLLIN)
+int jobserver_wait_(struct jobserver * js, int timeout, char * token)
+{
+  if(jobserver_poll_on_sigchld(token != NULL, &js->poll[0], timeout) == -1)
+    return -1;// errno: ENOMEM
+
+  if(js->poll[0].revents & POLLIN
+    && jobserver_terminate_job(js, token) == 0)
     {
-      // Keep first token and release others
-      while(true)
-	{
-	  if(jobserver_terminate_job(js, token) == -1) return -1;
-	  token = NULL;
-	}
+      while(jobserver_terminate_job(js, NULL) == 0) continue;
+
+      return 1;
     }
 
   if(token != NULL
      && (js->poll[1].revents & POLLIN))
     {
-      ssize_t size = read_from_pipe(js->read, token);
-      if(size == -1) return -1;
-      assert(size == 0 || size == 1);
+      return read_from_pipe(js->read, token);
     }
 
-  return js->current_jobs;
+  return 0;
 }
 
 int jobserver_wait(struct jobserver * js, int timeout)
 {
-  return jobserver_wait_(js, timeout, NULL);
+  jobserver_wait_(js, timeout, NULL);
+
+  return js->current_jobs;
 }

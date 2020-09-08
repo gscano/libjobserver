@@ -25,7 +25,7 @@ extern void close_pipe_end(int fd);
 extern int jobserver_terminate_job(struct jobserver * js, char * token);
 
 // token.c
-extern int acquire_jobserver_token(struct jobserver * js, char * token);
+extern int acquire_jobserver_token(struct jobserver * js, int wait, char * token);
 extern int release_jobserver_token(struct jobserver * js, char token);
 
 // wait.c

@@ -20,12 +20,14 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
     return -1;// errno: ENOMEM
 
   if(js->poll[0].revents & POLLIN
-    && jobserver_terminate_job(js, token) == 0)
+     && jobserver_terminate_job(js, token) == 0)
     {
       while(jobserver_terminate_job(js, NULL) == 0) continue;
 
       return 1;
     }
+
+  errno = 0;
 
   if(token != NULL
      && (js->poll[1].revents & POLLIN))

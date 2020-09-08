@@ -8,11 +8,10 @@
 #include "jobserver.h"
 
 #define MAX_ID_SIZE 10
+#define EXE "main.sh"
 
 struct data
 {
-  bool local;
-
   char id[MAX_ID_SIZE + 1];
   int wait;
 };
@@ -21,23 +20,26 @@ int test(void * data_)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "launch %s\n", data->id);
+  fprintf(stderr, "Launching job %s, wait for %ds.\n",
+	  data->id, data->wait);
 
   char buffer[32];
   snprintf(buffer, 32, "%s", data->id);
-  char * args[2] = {"main.sh", buffer};
+  char * args[2] = {EXE, buffer};
 
-  return execve("./main.sh", args, NULL);
+  assert(execve("./main.sh", args, NULL) == 0);
 }
 
 void end(void * data_, int status)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "%d saying goodbye %d\n", data->id, status);
+  fprintf(stderr, "Job %s collected with status: %d\n",
+	  data->id, WEXITSTATUS(status));
 }
 
-// [1]: number of tokens if not inherited
+// [1]: name
+// [2]: number of tokens if not inherited
 int main(int argc, char ** argv)
 {
   if(argc < 3)
@@ -53,7 +55,7 @@ int main(int argc, char ** argv)
 
   struct jobserver js;
 
-  fprintf(stderr, "Connecting to jobserver ...");
+  fprintf(stderr, "Connecting to jobserver ... ");
   if(jobserver_connect(&js) == -1)
     {
       assert(errno == EACCES);
@@ -74,10 +76,11 @@ int main(int argc, char ** argv)
 
       jobs[i].wait = atoi(argv[3 + i]);
 
-      assert(jobserver_launch_job(&js, true, &jobs[i], test, end) == 0);
+      fprintf(stderr, "job %s prepared ...\n", jobs[i].id);
+      assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
     }
 
-  jobserver_wait(&js, -1);
+  assert(jobserver_wait(&js, -1) == 0);
 
   assert(jobserver_close(&js) == 0);
 

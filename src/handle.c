@@ -9,11 +9,16 @@
 #include "jobserver.h"
 #include "internal.h"
 
-int jobserver_launch_job(struct jobserver * js, bool inherit, void * data,
+int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done)
 {
   char token;
-  if(acquire_jobserver_token(js, &token) != 1) return -1;
+
+  switch(acquire_jobserver_token(js, wait, &token))
+    {
+    case  0: errno = EAGAIN;
+    case -1: return -1;
+    }
 
   if(js->current_jobs == js->max_jobs)
     {

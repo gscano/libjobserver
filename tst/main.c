@@ -58,9 +58,8 @@ int main(int argc, char ** argv)
   fprintf(stderr, "Connecting to jobserver ... ");
   if(jobserver_connect(&js) == -1)
     {
-      assert(errno == EACCES);
       fprintf(stderr, " no jobserver found.\nCreating jobserver ...");
-      assert(jobserver_create(&js, size, 't') == 0);
+      assert(jobserver_create(&js, size, 't') == size + 1);
     }
   fprintf(stderr, " done: ");
   jobserver_print(stderr, &js, ", ", ",", "\n");

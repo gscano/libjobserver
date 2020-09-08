@@ -26,9 +26,7 @@ sigset_t jobserver_sigchld(int how)
 static inline
 int jobserver_init(struct jobserver * js)
 {
-  js->read = js->write = -1;
-
-  js->has_free_token = false;
+  js->has_free_token = true;
 
   js->current_jobs = js->max_jobs = 0;
   js->jobs = NULL;
@@ -38,7 +36,7 @@ int jobserver_init(struct jobserver * js)
   sigset_t sigchld = jobserver_sigchld(SIG_BLOCK);
 
   js->poll[0].fd = signalfd(-1, &sigchld, 0);
-  js->poll[1].fd = -1;
+  js->poll[1].fd = js->read;
 
   if(js->poll[0].fd == -1)
     goto unblock_sigchld;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
@@ -59,26 +57,23 @@ int jobserver_init(struct jobserver * js)
 
 int jobserver_connect(struct jobserver * js)
 {
-  if(jobserver_init(js) == -1)
-    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
-
   if(jobserver_getenv(js) == -1)
     return -1;// errno: EBADF
 
-  if(js->read != -1 && js->write != -1)
-    {
-      if(fcntl(js->read, F_GETFD) == -1) goto access_error;
-      if(fcntl(js->write, F_GETFD) == -1) goto access_error;
-    }
+  if(js->read == -1 || js->write == -1)
+    return -1;
 
-  js->has_free_token = true;
+  if(fcntl(js->read, F_GETFD) == -1) goto access_error;
+  if(fcntl(js->write, F_GETFD) == -1) goto access_error;
 
-  js->poll[1].fd = js->read;
+  if(jobserver_init(js) == -1)
+    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
   return 0;
 
  access_error:
   if(errno == EBADF) errno = EACCES;// Missing a leading '+'
+
   return -1;
 }
 
@@ -101,9 +96,6 @@ int jobserver_create_n(struct jobserver * js, char const * tokens)
 
 int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
 {
-  if(jobserver_init(js) == -1)
-    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
-
   if(size > PIPE_BUF)
     {
       errno = EINVAL;
@@ -116,21 +108,25 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       if(pipe(pipefds) == -1) return -1;// errno: EMFILE, ENFILE
       js->read = pipefds[0];
       js->write = pipefds[1];
-      js->poll[1].fd = js->read;
 
       if(write_to_pipe(js->write, tokens, size) == -1)
-	goto error_close_fds;
+	goto error_close;
     }
 
-  if(jobserver_setenv(js) == -1)
-    goto error_close_fds;// errno: ENOMEM
+  if(jobserver_init(js) == -1)
+    goto error_close;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
-  js->has_free_token = true;
+  if(jobserver_setenv(js) == -1)
+    goto error_close_all;// errno: ENOMEM
 
   return size + 1;
 
- error_close_fds:
-  jobserver_close(js);
+ error_close_all:
+  jobserver_close_(js, true);
+
+ error_close:
+  close(js->read);
+  close(js->write);
 
   return -1;
 }

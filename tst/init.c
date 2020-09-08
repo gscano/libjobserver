@@ -3,7 +3,7 @@
 #include <assert.h> // assert()
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
-#include <stdlib.h> // EXIT_SUCCESS
+#include <stdlib.h> // EXIT_SUCCESS, setenv(), unsetenv()
 #include <stdio.h> // sprintf()
 #include <unistd.h> // pipe()
 
@@ -19,11 +19,11 @@ int main()
   char env_[strlen(env) + 1];
   strcpy(env_, env);
 
-  setenv("MAKEFLAGS", "", 1);
+  unsetenv("MAKEFLAGS");
 
   test_connect();
 
-  setenv("MAKEFLAGS", "", 1);
+  unsetenv("MAKEFLAGS");
 
   test_create();
 
@@ -37,8 +37,8 @@ void test_connect()
 {
   {
     struct jobserver js;
-    assert(jobserver_connect(&js) == 0);
-    assert(js.has_free_token);
+    assert(jobserver_connect(&js) == -1);
+    assert(errno == 0);
   }
 
   {
@@ -49,19 +49,11 @@ void test_connect()
     {
       struct jobserver js;
 
-      assert(jobserver_connect(&js) == 0);
-      assert(js.has_free_token);
-    }
-
-    {
-      struct jobserver js;
-
       snprintf(env, 32, "--jobserver-auth=%d,%d", pipefd[0], pipefd[1]);
       setenv("MAKEFLAGS", env, 1);
 
       assert(jobserver_connect(&js) == 0);
       assert(errno == 0);
-      assert(js.has_free_token);
     }
 
     {
@@ -72,7 +64,6 @@ void test_connect()
 
       assert(jobserver_connect(&js) == -1);
       assert(errno == EBADF);
-      assert(!js.has_free_token);
     }
 
     {
@@ -83,7 +74,6 @@ void test_connect()
 
       assert(jobserver_connect(&js) == -1);
       assert(errno == EBADF);
-      assert(!js.has_free_token);
     }
 
     assert(close(pipefd[0]) != -1);
@@ -104,7 +94,6 @@ void test_connect()
 
     assert(jobserver_connect(&js) == -1);
     assert(errno == EACCES);
-    assert(!js.has_free_token);
   }
 }
 
@@ -120,9 +109,6 @@ void test_create()
 
   {
     assert(jobserver_create_n(&js, "abcde") == 6);
-    assert(js.read != -1);
-    assert(js.write != -1);
-    assert(js.has_free_token);
 
     char buffer[10] = {0};
     assert(read(js.read, buffer, 10) == 5);
@@ -135,9 +121,6 @@ void test_create()
 
   {
     assert(jobserver_create(&js, 4, 'a') == 5);
-    assert(js.read != -1);
-    assert(js.write != -1);
-    assert(js.has_free_token);
 
     char buffer[10] = {0};
     assert(read(js.read, buffer, 10) == 4);

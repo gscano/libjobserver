@@ -7,55 +7,78 @@
 
 #include "jobserver.h"
 
-#define MAX_ID_SIZE 10
-#define EXE "main.sh"
+#define MAX_ID_LENGTH 10
+#define LOCAL_ENV "JOBSERVER_TEST"
 
 struct data
 {
-  char id[MAX_ID_SIZE + 1];
-  int wait;
+  char * exe;
+  char id[MAX_ID_LENGTH + 1];
+  char * arg;
 };
 
 int test(void * data_)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "Launching job %s, wait for %ds.\n",
-	  data->id, data->wait);
+  fprintf(stderr, "Launching job %s '%s %s'.\n",
+	  data->id, data->exe, data->arg);
 
-  char buffer[32];
-  snprintf(buffer, 32, "%s", data->id);
-  char * args[2] = {EXE, buffer};
+  int size = 2;
+  char * pos = data->arg;
+  while((pos = strchr(pos, ' ')) != NULL)
+    {
+      ++pos;
+      ++size;
+    }
 
-  assert(execve("./main.sh", args, NULL) == 0);
+  char * args[size];
+  args[0] = data->exe;
+  args[1] = data->arg;
+  size = 2;
+
+  pos = data->arg;
+  while((pos = strchr(pos, ' ')) != NULL)
+    {
+      *pos = '\0';
+      args[size++] = ++pos;
+    }
+
+  args[size] = NULL;
+
+  assert(setenv(LOCAL_ENV, data->id, 1) == 0);
+
+  extern char ** environ;
+  assert(execve(data->exe, args, environ) == 0);
 }
 
 void end(void * data_, int status)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "Job %s collected with status: %d\n",
-	  data->id, WEXITSTATUS(status));
+  fprintf(stderr, "Job %s '%s %s' collected with status: %d\n",
+	  data->id, data->exe, data->arg, WEXITSTATUS(status));
 }
 
-// [1]: name
+// [1]: target binary to call
 // [2]: number of tokens if not inherited
+// [.]: argument for each child
 int main(int argc, char ** argv)
 {
   if(argc < 3)
-    return EXIT_FAILURE;
+    {
+      fprintf(stderr, "Usage: target tokens [argument...]\n");
+      return EXIT_FAILURE;
+    }
 
-  char * name = argv[1];
-  const size_t length = strlen(name);
-  if(length > MAX_ID_SIZE)
-    return EXIT_FAILURE;
+  int size = atoi(argv[1]);
+  assert(size >= 0);
 
-  int size = atoi(argv[2]);
-  assert(size != 0);
+  char * exe = argv[2];
 
   struct jobserver js;
 
-  fprintf(stderr, "Connecting to jobserver ... ");
+  fprintf(stderr, "Connecting to jobserver ...");
   if(jobserver_connect(&js) == -1)
     {
       fprintf(stderr, " no jobserver found.\nCreating jobserver ...");
@@ -65,17 +88,32 @@ int main(int argc, char ** argv)
   jobserver_print(stderr, &js, ", ", ",", "\n");
   fprintf(stderr, "\n");
 
-  struct data jobs[argc - 3];
+  char * base = getenv(LOCAL_ENV);
+  if(base == NULL)
+    base = "A";
 
-  char id = 'A';
-  for(int i = 0; i < argc - 3; ++i, ++id)
+  const size_t length = strlen(base);
+
+  if(length > MAX_ID_LENGTH)
     {
-      strcpy(jobs[i].id, name);
-      strncat(jobs[i].id + length, &id, 1);
+	fprintf(stderr, "Id length %d too long (max %d).", length, MAX_ID_LENGTH);
+	return EXIT_FAILURE;
+    }
 
-      jobs[i].wait = atoi(argv[3 + i]);
+  const int shift = 3;
+  struct data jobs[argc - shift];
+  char name = 'A';
 
-      fprintf(stderr, "job %s prepared ...\n", jobs[i].id);
+  for(int i = 0; i < argc - shift; ++i, ++name)
+    {
+      jobs[i].exe = exe;
+
+      strncat(jobs[i].id + length, base, 1);
+      strcpy(jobs[i].id, &name);
+
+      jobs[i].arg = argv[shift + i];
+
+      fprintf(stderr, "Job %s '%s %s' prepared ...\n", jobs[i].id, jobs[i].exe, jobs[i].arg);
       assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
     }
 

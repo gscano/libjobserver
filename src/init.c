@@ -2,7 +2,7 @@
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
 #include <limits.h> // PIPE_BUF
-#include <signal.h> // sigaddset(), sigemptyset(), sigprocmask()
+#include <signal.h> // sigaddset(), SIGCHLD, sigemptyset(), sigprocmask()
 #include <stdlib.h> // free()
 #include <string.h> // memset(), strlen()
 #include <sys/signalfd.h> // signalfd()

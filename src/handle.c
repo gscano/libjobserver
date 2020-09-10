@@ -102,11 +102,11 @@ int jobserver_terminate_job(struct jobserver * js, char * token)
 
 int jobserver_clear(struct jobserver * js)
 {
-  for(size_t i = 0; 0 < js->current_jobs; ++i)
+  while(js->current_jobs > 0)
     {
       struct jobserver_job * job = &js->jobs[js->current_jobs - 1];
 
-      if(kill(job->pid, SIGKILL) == -1) return -1;
+      if(kill(job->pid, SIGKILL) == -1) return js->current_jobs;
 
       js->current_jobs--;
     }

@@ -28,5 +28,5 @@ int release_jobserver_token(struct jobserver * js, char token)
       write_to_pipe(js->write, &token, 1);
     }
 
-  return 0;
+  return 1;
 }

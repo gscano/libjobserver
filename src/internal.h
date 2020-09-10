@@ -1,4 +1,4 @@
-#include <sys/types.h> // pid_t
+#include <sys/types.h> // pid_t, sigset_t
 
 #include "jobserver.h"
 

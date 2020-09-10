@@ -114,7 +114,7 @@ int jobserver_setenv_(int read_fd, int write_fd,
 
 #define JOBSERVER_PRINT(ptr, size)					\
   snprintf(ptr, size, "%.*s%s%s%s",					\
-	   word_end - env, env,						\
+	   (int)(word_end - env), env,					\
 	   dry_run ? "n" : "", debug ? "d" : "", keep_going ? "k" : "")
 
   const int word_size = JOBSERVER_PRINT(NULL, 0);
@@ -141,7 +141,7 @@ int jobserver_setenv_(int read_fd, int write_fd,
 	   && jobserver_auth_size > 0
 	   && (!(fds > before) || before[fds - before - 1] != ' ') ? " " : "",
 
-	   j - before, before,
+	   (int)(j - before), before,
 
 	   read_fd >= 0 && write_fd >= 0 ? jobserver_auth : "",
 

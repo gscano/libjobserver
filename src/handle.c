@@ -16,7 +16,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
 
   switch(acquire_jobserver_token(js, wait, &token))
     {
-    case  0: errno = EAGAIN;
+    case  0: errno = EAGAIN; return -1;
     case -1: return -1;
     }
 

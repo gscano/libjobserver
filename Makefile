@@ -1,7 +1,5 @@
 -include config.mk
 
-CFLAGS=-g -O0
-
 all: test
 
 src/%.o: src/%.c

@@ -50,6 +50,8 @@ int test(void * data_)
 
   extern char ** environ;
   assert(execve(data->exe, args, environ) == 0);
+
+  return 0;
 }
 
 void end(void * data_, int status)
@@ -96,8 +98,8 @@ int main(int argc, char ** argv)
 
   if(length > MAX_ID_LENGTH)
     {
-	fprintf(stderr, "Id length %d too long (max %d).", length, MAX_ID_LENGTH);
-	return EXIT_FAILURE;
+      fprintf(stderr, "Id length %d too long (max %d).", (int)length, MAX_ID_LENGTH);
+      return EXIT_FAILURE;
     }
 
   const int shift = 3;

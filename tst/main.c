@@ -62,63 +62,102 @@ void end(void * data_, int status)
 	  data->id, data->exe, data->arg, WEXITSTATUS(status));
 }
 
-// [1]: target binary to call
-// [2]: number of tokens if not inherited
-// [.]: argument for each child
-int main(int argc, char ** argv)
+void connect_to(struct jobserver * js, char * arg)
 {
-  if(argc < 3)
+  char * end;
+  int size = strtol(arg, &end, 10);
+
+  char * tokens;
+
+  if(size == 0 && end == arg)
     {
-      fprintf(stderr, "Usage: target tokens [argument...]\n");
-      return EXIT_FAILURE;
+      tokens = arg;
+      size = strlen(tokens);
     }
-
-  int size = atoi(argv[1]);
-  assert(size >= 0 && size <= 26);
-
-  char * exe = argv[2];
-
-  const int shift = 3;
-
-  struct jobserver js;
-
-  char tokens[] = "abcdefghijklmnopqrstuvwxyz";
-  tokens[size] = '\0';
+  else
+    {
+      assert(size >= 0 && size <= 26);
+      tokens = alloca(26);
+      strcpy(tokens, "abcdefghijklmnopqrstuvwxyz");
+      tokens[size] = '\0';
+    }
 
   fprintf(stderr, "Connecting to jobserver ...");
-  if(jobserver_connect(&js) == -1)
-    {
-      fprintf(stderr, " no jobserver found.\nCreating jobserver ...");
-      assert(jobserver_create_n(&js, tokens) == size + 1);
-    }
-  fprintf(stderr, " done: ");
-  jobserver_print(stderr, &js, ", ", ",", "\n");
-  fprintf(stderr, "\n");
 
+  if(jobserver_connect(js) == -1)
+    {
+      fprintf(stderr, " no jobserver found");
+
+      if(*tokens == '!')
+	{
+	  fprintf(stderr, ", and '!' was specified.\n");
+	  exit(EXIT_FAILURE);
+	}
+      else
+	{
+	  fprintf(stderr, ".\nCreating jobserver ...");
+	  int number = jobserver_create_n(js, tokens);
+	  assert(number == size + 1);
+	}
+    }
+
+  fprintf(stderr, " done: ");
+  jobserver_print(stderr, js, ", ", ",", "\n");
+  fprintf(stderr, "\n");
+}
+
+void prepare_jobs(struct data * jobs, size_t size, char * exe, char ** args)
+{
   char * base = getenv(LOCAL_ENV);
   if(base == NULL) base = "";
+
   const size_t length = strlen(base);
 
   if(length > MAX_ID_LENGTH - 1)
     {
-      fprintf(stderr, "Id length %d too long (max %d).", (int)length, MAX_ID_LENGTH);
-      return EXIT_FAILURE;
+      fprintf(stderr, "Id length %d too long (max %d).\n", (int)length, MAX_ID_LENGTH);
+      exit(EXIT_FAILURE);
     }
 
-  struct data jobs[argc - shift];
   char name = 'A';
 
-  for(int i = 0; i < argc - shift; ++i, ++name)
+  for(size_t i = 0; i < size; ++i, ++name)
     {
       jobs[i].exe = exe;
 
+      memset(jobs[i].id, 0, MAX_ID_LENGTH);
       strncat(jobs[i].id, base, length);
-      *(jobs[i].id + length) = name;
-      *(jobs[i].id + length + 1) = '\0';
+      jobs[i].id[length] = name;
+      jobs[i].id[length + 1] = '\0';
 
-      jobs[i].arg = argv[shift + i];
+      jobs[i].arg = args[i];
 
-      fprintf(stderr, "Job %s '%s %s' prepared ...\n", jobs[i].id, jobs[i].exe, jobs[i].arg);
+      fprintf(stderr, "Job %s '%s %s' prepared.\n", jobs[i].id, jobs[i].exe, jobs[i].arg);
+    }
+}
+
+// [1]: number of tokens if not inherited (use '!' to make sure it is)
+// [2]: target binary to call
+// [.]: argument for each child
+int main(int argc, char ** argv)
+{
+  const int shift = 3;
+
+  if(argc < shift)
+    {
+      fprintf(stderr, "Usage: tokens exe [argument...]\n");
+
+      return EXIT_FAILURE;
+    }
+
+  struct jobserver js;
+  connect_to(&js, argv[1]);
+
+  struct data jobs[argc - shift];
+  prepare_jobs(jobs, argc - shift, argv[2], argv + shift);
+
+  for(int i = 0; i < argc - shift; ++i)
+    {
 #if 0
       int status;
       while((status = jobserver_launch_job(&js, -1, true, &jobs[i], test, end)) != 0)
@@ -131,9 +170,6 @@ int main(int argc, char ** argv)
 #else
       assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
 #endif
-
-      jobserver_print(stderr, &js, ", ", ",", "\n");
-      fprintf(stderr, "\n");
     }
 
   int status;

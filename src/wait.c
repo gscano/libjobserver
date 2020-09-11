@@ -20,11 +20,11 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
 
       assert(status == sizeof(struct signalfd_siginfo));
       assert(si.ssi_signo == SIGCHLD);
-
-      status = jobserver_terminate_job(js, token);
-
-      assert(status == 0);
       (void)status;
+
+      if(jobserver_terminate_job(js, token) == -1)
+	if(errno != 0)
+	  return -1;
 
       while(jobserver_terminate_job(js, NULL) == 0) continue;
 
@@ -45,6 +45,20 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
 int jobserver_wait(struct jobserver * js, int timeout)
 {
   jobserver_wait_(js, timeout, NULL);
+
+  return js->current_jobs;
+}
+
+int jobserver_collect(struct jobserver * js, int timeout)
+{
+  size_t before = js->current_jobs + 1;
+
+  while(0 < js->current_jobs && js->current_jobs < before)
+    {
+      before = js->current_jobs;
+      if(jobserver_wait_(js, timeout, NULL) == -1)
+	break;
+    }
 
   return js->current_jobs;
 }

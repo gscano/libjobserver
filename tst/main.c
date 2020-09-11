@@ -106,6 +106,7 @@ int main(int argc, char ** argv)
   struct data jobs[argc - shift];
   char name = 'A';
 
+  int status = EXIT_SUCCESS;
   for(int i = 0; i < argc - shift; ++i, ++name)
     {
       jobs[i].exe = exe;
@@ -116,12 +117,23 @@ int main(int argc, char ** argv)
       jobs[i].arg = argv[shift + i];
 
       fprintf(stderr, "Job %s '%s %s' prepared ...\n", jobs[i].id, jobs[i].exe, jobs[i].arg);
-      assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
+      int local = jobserver_launch_job(&js, -1, true, &jobs[i], test, end);
+
+      if(local != 0)
+	{
+	  fprintf(stderr, "Error: %d, %m\n", local);
+	  return EXIT_FAILURE;
+	}
     }
 
-  assert(jobserver_wait(&js, -1) == 0);
+  if(jobserver_collect(&js, -1) != 0)
+    {
+      fprintf(stderr, "Error: %m\n");
+      return EXIT_FAILURE;
+    }
 
+  assert(jobserver_clear(&js));
   assert(jobserver_close(&js) == 0);
 
-  return EXIT_SUCCESS;
+  return status;
 }

@@ -2,10 +2,14 @@
 
 all: test
 
+-include src/%.d
+
 src/%.o: src/%.c
 	$(CC) -c $< -o $@ $(CFLAGS) -MD
 
 test: tst/env tst/init tst/handle tst/main
+
+-include tst/%.d
 
 tst/%.o: tst/%.c
 	$(CC) -c $< -o $@ $(CFLAGS) -I src -MD

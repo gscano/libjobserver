@@ -104,16 +104,16 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       return -1;
     }
 
-  if(size > 0)
-    {
-      int pipefds[2];
-      if(pipe(pipefds) == -1) return -1;// errno: EMFILE, ENFILE
-      js->read = pipefds[0];
-      js->write = pipefds[1];
+  int pipefds[2];
 
-      if(write_to_pipe(js->write, tokens, size) == -1)
-	goto error_close;
-    }
+  if(pipe(pipefds) == -1)
+    return -1;// errno: EMFILE, ENFILE
+
+  js->read = pipefds[0];
+  js->write = pipefds[1];
+
+  if(write_to_pipe(js->write, tokens, size) == -1)
+    goto error_close;
 
   if(jobserver_init(js) == -1)
     goto error_close;// errno: EMFILE, ENFILE, ENODEV, ENOMEM

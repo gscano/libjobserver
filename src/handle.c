@@ -14,11 +14,13 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
 {
   char token;
 
-  switch(acquire_jobserver_token(js, wait, &token))
-    {
-    case  0: errno = EAGAIN; return -1;
-    case -1: return -1;
-    }
+  int status = acquire_jobserver_token(js, wait, &token);
+
+  switch(status)
+      {
+      case  0: errno = EAGAIN; return -1;
+      case -1: return -1;
+      }
 
   if(js->current_jobs == js->max_jobs)
     {
@@ -68,16 +70,23 @@ struct jobserver_job * jobserver_find_job(struct jobserver * js, pid_t pid)
   return NULL;
 }
 
-int jobserver_terminate_job(struct jobserver * js, char * token)
+int jobserver_terminate_job(struct jobserver * js, char * token, bool with_sigchld)
 {
+  js->stopped = -1;
+
   int status;
-  pid_t pid = waitpid(-1, &status, WNOHANG);
+  pid_t pid = waitpid(-1, &status, with_sigchld ? 0 : WNOHANG);
 
   if(pid <= 0) return -1;// errno: ECHILD
 
   struct jobserver_job * job = jobserver_find_job(js, pid);
 
-  if(job == NULL) return pid;
+  if(job == NULL)
+    {
+      js->stopped = pid;
+      errno = ECHILD;
+      return -1;
+    }
 
   job->done(job->data, status);
 

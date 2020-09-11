@@ -7,7 +7,7 @@
 
 #include "jobserver.h"
 
-#define MAX_ID_LENGTH 10
+#define MAX_ID_LENGTH 31
 #define LOCAL_ENV "JOBSERVER_TEST"
 
 struct data
@@ -74,66 +74,82 @@ int main(int argc, char ** argv)
     }
 
   int size = atoi(argv[1]);
-  assert(size >= 0);
+  assert(size >= 0 && size <= 26);
 
   char * exe = argv[2];
 
+  const int shift = 3;
+
   struct jobserver js;
+
+  char tokens[] = "abcdefghijklmnopqrstuvwxyz";
+  tokens[size] = '\0';
 
   fprintf(stderr, "Connecting to jobserver ...");
   if(jobserver_connect(&js) == -1)
     {
       fprintf(stderr, " no jobserver found.\nCreating jobserver ...");
-      assert(jobserver_create(&js, size, 't') == size + 1);
+      assert(jobserver_create_n(&js, tokens) == size + 1);
     }
   fprintf(stderr, " done: ");
   jobserver_print(stderr, &js, ", ", ",", "\n");
   fprintf(stderr, "\n");
 
   char * base = getenv(LOCAL_ENV);
-  if(base == NULL)
-    base = "A";
-
+  if(base == NULL) base = "";
   const size_t length = strlen(base);
 
-  if(length > MAX_ID_LENGTH)
+  if(length > MAX_ID_LENGTH - 1)
     {
       fprintf(stderr, "Id length %d too long (max %d).", (int)length, MAX_ID_LENGTH);
       return EXIT_FAILURE;
     }
 
-  const int shift = 3;
   struct data jobs[argc - shift];
   char name = 'A';
 
-  int status = EXIT_SUCCESS;
   for(int i = 0; i < argc - shift; ++i, ++name)
     {
       jobs[i].exe = exe;
 
-      strncat(jobs[i].id + length, base, 1);
-      strcpy(jobs[i].id, &name);
+      strncat(jobs[i].id, base, length);
+      *(jobs[i].id + length) = name;
+      *(jobs[i].id + length + 1) = '\0';
 
       jobs[i].arg = argv[shift + i];
 
       fprintf(stderr, "Job %s '%s %s' prepared ...\n", jobs[i].id, jobs[i].exe, jobs[i].arg);
-      int local = jobserver_launch_job(&js, -1, true, &jobs[i], test, end);
-
-      if(local != 0)
+#if 0
+      int status;
+      while((status = jobserver_launch_job(&js, -1, true, &jobs[i], test, end)) != 0)
 	{
-	  fprintf(stderr, "Error: %d, %m\n", local);
+	  fprintf(stderr, "Error: %d %m (stopped: %d)\n", status, js.stopped);
+	  jobserver_print(stderr, &js, ", ", ",", "\n");
+	  fprintf(stderr, "\n");
+	  assert(errno == ECHILD);
+	}
+#else
+      assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
+#endif
+
+      jobserver_print(stderr, &js, ", ", ",", "\n");
+      fprintf(stderr, "\n");
+    }
+
+  int status;
+  while((status = jobserver_collect(&js, -1)) != 0)
+    {
+      if(status == -1 && js.stopped != -1)
+	{
+	  fprintf(stderr, "Error: %d %m\n", status);
+	  jobserver_print(stderr, &js, ", ", ",", "\n");
+	  fprintf(stderr, "\n");
 	  return EXIT_FAILURE;
 	}
     }
 
-  if(jobserver_collect(&js, -1) != 0)
-    {
-      fprintf(stderr, "Error: %m\n");
-      return EXIT_FAILURE;
-    }
-
-  assert(jobserver_clear(&js));
+  assert(jobserver_clear(&js) == 0);
   assert(jobserver_close(&js) == 0);
 
-  return status;
+  return EXIT_SUCCESS;
 }

@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <stddef.h> // size_t
 #include <stdio.h> // FILE
+#include <sys/types.h> // pid_t
 
 int jobserver_getenv_(int * read_fd, int * write_fd,
 		      bool * dry_run, bool * debug, bool * keep_going);
@@ -16,6 +17,8 @@ struct jobserver
   bool dry_run;
   bool debug;
   bool keep_going;
+
+  pid_t stopped;
 
   int read;
   int write;

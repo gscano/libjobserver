@@ -39,6 +39,7 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		     "dry run: %d" "%s"
 		     "debug: %d" "%s"
 		     "keep-going: %d" "%s"
+		     "stopped: %d" "%s"
 		     "read: %d" "%s"
 		     "write: %d" "%s"
 		     "has-free-token: %d" "%s"
@@ -46,6 +47,7 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		     js->dry_run, separator,
 		     js->debug, separator,
 		     js->keep_going, separator,
+		     js->stopped, separator,
 		     js->read, separator,
 		     js->write, separator,
 		     js->has_free_token, separator,

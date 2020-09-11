@@ -22,7 +22,7 @@ extern int write_to_pipe(int fd, const char * buf, size_t count);
 extern void close_pipe_end(int fd);
 
 // handle.c
-extern int jobserver_terminate_job(struct jobserver * js, char * token);
+extern int jobserver_terminate_job(struct jobserver * js, char * token, bool with_sigchld);
 
 // token.c
 extern int acquire_jobserver_token(struct jobserver * js, int wait, char * token);

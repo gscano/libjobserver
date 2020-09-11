@@ -26,6 +26,8 @@ sigset_t jobserver_sigchld(int how)
 static inline
 int jobserver_init(struct jobserver * js)
 {
+  js->stopped = -1;
+
   js->has_free_token = true;
 
   js->current_jobs = js->max_jobs = 0;

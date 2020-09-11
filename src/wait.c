@@ -20,13 +20,11 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
 
       assert(status == sizeof(struct signalfd_siginfo));
       assert(si.ssi_signo == SIGCHLD);
-      (void)status;
 
-      if(jobserver_terminate_job(js, token) == -1)
-	if(errno != 0)
-	  return -1;
+      status = jobserver_terminate_job(js, token, true);
+      if(status != 0) return -1;// errno: ECHILD
 
-      while(jobserver_terminate_job(js, NULL) == 0) continue;
+      while(jobserver_terminate_job(js, NULL, false) == 0) continue;
 
       return 1;
     }

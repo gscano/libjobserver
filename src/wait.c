@@ -21,10 +21,10 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
       assert(status == sizeof(struct signalfd_siginfo));
       assert(si.ssi_signo == SIGCHLD);
 
-      status = jobserver_terminate_job(js, token, true);
+      status = jobserver_terminate_job_(js, token, true);
       if(status != 0) return -1;// errno: ECHILD
 
-      while(jobserver_terminate_job(js, NULL, false) == 0) continue;
+      while(jobserver_terminate_job_(js, NULL, false) == 0) continue;
 
       return 1;
     }
@@ -34,7 +34,7 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
   if(token != NULL
      && js->poll[1].revents & POLLIN)
     {
-      return read_from_pipe(js->read, token);
+      return read_from_pipe_(js->read, token);
     }
 
   return 0;

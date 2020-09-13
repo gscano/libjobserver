@@ -1,7 +1,7 @@
 #include <errno.h> // errno
 #include <unistd.h> // close(), read(), write()
 
-int write_to_pipe(int fd, const char * buf, size_t count)
+int write_to_pipe_(int fd, const char * buf, size_t count)
 {
   int ret;
 
@@ -11,7 +11,7 @@ int write_to_pipe(int fd, const char * buf, size_t count)
   return ret;
 }
 
-int read_from_pipe(int fd, char * token)
+int read_from_pipe_(int fd, char * token)
 {
   int ret;
 
@@ -20,7 +20,7 @@ int read_from_pipe(int fd, char * token)
   return ret;
 }
 
-void close_pipe_end(int fd)
+void close_pipe_end_(int fd)
 {
   int errno_ = errno;
   int ret;

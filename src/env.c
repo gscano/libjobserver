@@ -13,8 +13,8 @@
 #define MAKEFLAGS_AUTH "--jobserver-auth"
 
 static inline
-char const * search_for_options_in_first_word(char const * env, bool target,
-					      bool * dry_run, bool * debug, bool * keep_going)
+char const * search_for_options_in_first_word_(char const * env, bool target,
+					       bool * dry_run, bool * debug, bool * keep_going)
 {
   if(env[0] != '-')
     {
@@ -44,7 +44,7 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
   char const * env = getenv(MAKEFLAGS);
   if(env == NULL) return 0;
 
-  search_for_options_in_first_word(env, true, dry_run, debug, keep_going);
+  search_for_options_in_first_word_(env, true, dry_run, debug, keep_going);
 
   char const * fds = strstr(env, MAKEFLAGS_AUTH);
   if(fds == NULL) return 0;
@@ -85,8 +85,8 @@ int jobserver_setenv_(int read_fd, int write_fd,
   if(env == NULL) env = word_end = before = j = fds = after = end = "";
   else
     {
-      word_end = search_for_options_in_first_word(env, false,
-						  &dry_run, &debug, &keep_going);
+      word_end = search_for_options_in_first_word_(env, false,
+						   &dry_run, &debug, &keep_going);
 
       before = word_end;
       j = strstr(word_end, "-j");

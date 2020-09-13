@@ -11,7 +11,7 @@
 #include "jobserver.h"
 #include "internal.h"
 
-sigset_t jobserver_sigchld(int how)
+sigset_t jobserver_sigchld_(int how)
 {
   sigset_t sigchld;
 
@@ -24,7 +24,7 @@ sigset_t jobserver_sigchld(int how)
 }
 
 static inline
-int jobserver_init(struct jobserver * js)
+int jobserver_init_(struct jobserver * js)
 {
   js->stopped = -1;
 
@@ -35,7 +35,7 @@ int jobserver_init(struct jobserver * js)
 
   js->poll[0].events = js->poll[1].events = POLLIN;
 
-  sigset_t sigchld = jobserver_sigchld(SIG_BLOCK);
+  sigset_t sigchld = jobserver_sigchld_(SIG_BLOCK);
 
   js->poll[0].fd = signalfd(-1, &sigchld, 0);
   js->poll[1].fd = js->read;
@@ -52,7 +52,7 @@ int jobserver_init(struct jobserver * js)
   close(js->poll[0].fd);
 
  unblock_sigchld:
-  jobserver_sigchld(SIG_UNBLOCK);
+  jobserver_sigchld_(SIG_UNBLOCK);
 
   return -1;
 }
@@ -68,13 +68,14 @@ int jobserver_connect(struct jobserver * js)
   if(fcntl(js->read, F_GETFD) == -1) goto access_error;
   if(fcntl(js->write, F_GETFD) == -1) goto access_error;
 
-  if(jobserver_init(js) == -1)
+  if(jobserver_init_(js) == -1)
     return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
   return 0;
 
  access_error:
-  if(errno == EBADF) errno = EACCES;// Missing a leading '+'
+  if(errno == EBADF)
+    errno = EACCES;// Missing a leading '+'
 
   return -1;
 }
@@ -112,10 +113,10 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   js->read = pipefds[0];
   js->write = pipefds[1];
 
-  if(write_to_pipe(js->write, tokens, size) == -1)
+  if(write_to_pipe_(js->write, tokens, size) == -1)
     goto error_close;
 
-  if(jobserver_init(js) == -1)
+  if(jobserver_init_(js) == -1)
     goto error_close;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
   if(jobserver_setenv(js) == -1)
@@ -137,14 +138,14 @@ void jobserver_close_(struct jobserver * js, bool keep)
 {
   if(!keep)
     {
-      close_pipe_end(js->read);
-      close_pipe_end(js->write);
+      close_pipe_end_(js->read);
+      close_pipe_end_(js->write);
     }
 
   if(js->jobs != NULL)
     free(js->jobs);
 
-  jobserver_sigchld(SIG_UNBLOCK);
+  jobserver_sigchld_(SIG_UNBLOCK);
   close(js->poll[0].fd);
 }
 

@@ -3,7 +3,7 @@
 #include "jobserver.h"
 #include "internal.h"
 
-int jobserver_print_job(FILE * stream, struct jobserver_job job, const char * separator)
+int jobserver_print_job_(FILE * stream, struct jobserver_job job, const char * separator)
 {
   return fprintf(stream,
 		 "token: '%c'" "%s"
@@ -16,8 +16,8 @@ int jobserver_print_job(FILE * stream, struct jobserver_job job, const char * se
 		 job.data);
 }
 
-int jobserver_print_jobs(FILE * stream, struct jobserver_job const * jobs, size_t size,
-			 const char * separator, const char * inter_separator)
+int jobserver_print_jobs_(FILE * stream, struct jobserver_job const * jobs, size_t size,
+			  const char * separator, const char * inter_separator)
 {
   int count = 0;
 
@@ -25,7 +25,7 @@ int jobserver_print_jobs(FILE * stream, struct jobserver_job const * jobs, size_
   for(i = 0; i < size; ++i)
     {
       if(i != 0) count += fprintf(stream, "%s", inter_separator);
-      count += jobserver_print_job(stream, jobs[i], separator);
+      count += jobserver_print_job_(stream, jobs[i], separator);
     }
 
   return count;
@@ -56,8 +56,8 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
   if(0 < js->current_jobs)
     {
       size += fprintf(stream, "%s", inter_job_separator);
-      size += jobserver_print_jobs(stream, js->jobs, js->current_jobs,
-				   job_separator, inter_job_separator);
+      size += jobserver_print_jobs_(stream, js->jobs, js->current_jobs,
+				    job_separator, inter_job_separator);
     }
 
   return size;

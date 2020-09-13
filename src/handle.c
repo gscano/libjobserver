@@ -14,7 +14,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
 {
   char token;
 
-  int status = acquire_jobserver_token(js, wait, &token);
+  int status = acquire_jobserver_token_(js, wait, &token);
 
   switch(status)
       {
@@ -55,13 +55,13 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
 
  error:;
   int error = errno;
-  release_jobserver_token(js, token);
+  release_jobserver_token_(js, token);
   errno = error;
   return -1;
 }
 
 static inline
-struct jobserver_job * jobserver_find_job(struct jobserver * js, pid_t pid)
+struct jobserver_job * jobserver_find_job_(struct jobserver * js, pid_t pid)
 {
   for(size_t i = 0; i < js->current_jobs; ++i)
     if(js->jobs[i].pid == pid)
@@ -70,7 +70,7 @@ struct jobserver_job * jobserver_find_job(struct jobserver * js, pid_t pid)
   return NULL;
 }
 
-int jobserver_terminate_job(struct jobserver * js, char * token, bool with_sigchld)
+int jobserver_terminate_job_(struct jobserver * js, char * token, bool with_sigchld)
 {
   js->stopped = -1;
 
@@ -79,7 +79,7 @@ int jobserver_terminate_job(struct jobserver * js, char * token, bool with_sigch
 
   if(pid <= 0) return -1;// errno: ECHILD
 
-  struct jobserver_job * job = jobserver_find_job(js, pid);
+  struct jobserver_job * job = jobserver_find_job_(js, pid);
 
   if(job == NULL)
     {
@@ -92,7 +92,7 @@ int jobserver_terminate_job(struct jobserver * js, char * token, bool with_sigch
 
   if(token == NULL)
     {
-      release_jobserver_token(js, job->token);
+      release_jobserver_token_(js, job->token);
     }
   else
     {

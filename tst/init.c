@@ -108,7 +108,7 @@ void test_create()
   js.keep_going = false;
 
   {
-    assert(jobserver_create_n(&js, "abcde") == 6);
+    assert(jobserver_create(&js, "abcde") == 6);
 
     char buffer[10] = {0};
     assert(read(js.read, buffer, 10) == 5);
@@ -120,7 +120,7 @@ void test_create()
   setenv("MAKEFLAGS", "", 1);
 
   {
-    assert(jobserver_create(&js, 4, 'a') == 5);
+    assert(jobserver_create_n(&js, 4, 'a') == 5);
 
     char buffer[10] = {0};
     assert(read(js.read, buffer, 10) == 4);

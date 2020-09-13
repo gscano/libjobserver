@@ -83,18 +83,18 @@ int jobserver_connect(struct jobserver * js)
 static
 int jobserver_create_(struct jobserver * js, char const * tokens, size_t size);
 
-int jobserver_create(struct jobserver * js, size_t size, char token)
+int jobserver_create(struct jobserver * js, char const * tokens)
+{
+  return jobserver_create_(js, tokens, strlen(tokens));
+}
+
+int jobserver_create_n(struct jobserver * js, size_t size, char token)
 {
   char tokens[size];
 
   memset(tokens, token, size);
 
   return jobserver_create_(js, tokens, size);
-}
-
-int jobserver_create_n(struct jobserver * js, char const * tokens)
-{
-  return jobserver_create_(js, tokens, strlen(tokens));
 }
 
 int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)

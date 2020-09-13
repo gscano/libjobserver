@@ -96,7 +96,7 @@ void connect_to(struct jobserver * js, char * arg)
       else
 	{
 	  fprintf(stderr, ".\nCreating jobserver ...");
-	  int number = jobserver_create_n(js, tokens);
+	  int number = jobserver_create(js, tokens);
 	  assert(number == size + 1);
 	}
     }

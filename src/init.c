@@ -1,27 +1,13 @@
-#include <assert.h> // assert()
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
 #include <limits.h> // PIPE_BUF
-#include <signal.h> // sigaddset(), SIGCHLD, sigemptyset(), sigprocmask()
+#include <signal.h> // SIG_BLOCK, SIG_UNBLOCK
 #include <stdlib.h> // free()
 #include <string.h> // memset(), strlen()
-#include <sys/signalfd.h> // signalfd()
 #include <unistd.h> // pipe()
 
 #include "jobserver.h"
 #include "internal.h"
-
-sigset_t jobserver_sigchld_(int how)
-{
-  sigset_t sigchld;
-
-  assert(sigemptyset(&sigchld) == 0);
-  assert(sigaddset(&sigchld, SIGCHLD) == 0);
-
-  assert(sigprocmask(how, &sigchld, NULL) == 0);
-
-  return sigchld;
-}
 
 static inline
 int jobserver_init_(struct jobserver * js)
@@ -35,9 +21,9 @@ int jobserver_init_(struct jobserver * js)
 
   js->poll[0].events = js->poll[1].events = POLLIN;
 
-  sigset_t sigchld = jobserver_sigchld_(SIG_BLOCK);
+  sigset_t sigchld = jobserver_handle_sigchld_(SIG_BLOCK);
 
-  js->poll[0].fd = signalfd(-1, &sigchld, 0);
+  js->poll[0].fd = jobserver_signalfd_sigchld_(sigchld);
   js->poll[1].fd = js->read;
 
   if(js->poll[0].fd == -1)
@@ -52,7 +38,7 @@ int jobserver_init_(struct jobserver * js)
   close(js->poll[0].fd);
 
  unblock_sigchld:
-  jobserver_sigchld_(SIG_UNBLOCK);
+  jobserver_handle_sigchld_(SIG_UNBLOCK);
 
   return -1;
 }
@@ -145,7 +131,7 @@ void jobserver_close_(struct jobserver * js, bool keep)
   if(js->jobs != NULL)
     free(js->jobs);
 
-  jobserver_sigchld_(SIG_UNBLOCK);
+  jobserver_handle_sigchld_(SIG_UNBLOCK);
   close(js->poll[0].fd);
 }
 

@@ -13,7 +13,6 @@ struct jobserver_job
 #define JOBSERVER_FREE_TOKEN (char)0
 
 // init.c
-extern sigset_t jobserver_sigchld_(int how);
 extern void jobserver_close_(struct jobserver * js, bool inherit);
 
 // internal.c
@@ -23,6 +22,10 @@ extern void close_pipe_end_(int fd);
 
 // handle.c
 extern int jobserver_terminate_job_(struct jobserver * js, char * token, bool with_sigchld);
+
+// signal.c
+extern sigset_t jobserver_handle_sigchld_(int how);
+extern int jobserver_signalfd_sigchld_(sigset_t sigchld);
 
 // token.c
 extern int acquire_jobserver_token_(struct jobserver * js, int wait, char * token);

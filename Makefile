@@ -5,25 +5,25 @@ all: test
 -include src/%.d
 
 src/%.o: src/%.c
-	$(CC) -c $< -o $@ $(CFLAGS) -MD
+	$(CC) -c $< $(CFLAGS) -MD -o $@
 
 test: tst/env tst/init tst/handle tst/main
 
 -include tst/%.d
 
 tst/%.o: tst/%.c
-	$(CC) -c $< -o $@ $(CFLAGS) -I src -MD
+	$(CC) -c $< $(CFLAGS) -I src -MD -o $@
 
 tst/env: tst/env.o src/env.o
-	$(CC) $^ -o $@ $(CFLAGS)
+	$(CC) $^ $(CFLAGS) -o $@
 
-tst/init: tst/init.o src/init.o src/env.o src/internal.o
-	$(CC) $^ -o $@ $(CFLAGS)
+tst/init: tst/init.o src/init.o src/env.o src/internal.o src/signal.o
+	$(CC) $^ $(CFLAGS) -o $@
 
-tst/handle: tst/handle.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o
+tst/handle: tst/handle.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o src/signal.o
 
-tst/main: tst/main.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o
-	$(CC) $^ -o $@ $(CFLAGS)
+tst/main: tst/main.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o src/signal.o
+	$(CC) $^ $(CFLAGS) -o $@
 
 run-test: test
 

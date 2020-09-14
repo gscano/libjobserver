@@ -21,26 +21,12 @@ int jobserver_init_(struct jobserver * js)
 
   js->poll[0].events = js->poll[1].events = POLLIN;
 
-  sigset_t sigchld = jobserver_handle_sigchld_(SIG_BLOCK);
-
-  js->poll[0].fd = jobserver_signalfd_sigchld_(sigchld);
   js->poll[1].fd = js->read;
 
-  if(js->poll[0].fd == -1)
-    goto unblock_sigchld;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
-
-  if(fcntl(js->poll[0].fd, F_SETFD, O_CLOEXEC) == -1)
-    goto close_signalfd;
+  if(jobserver_handle_sigchld_(SIG_BLOCK, &js->poll[0].fd) == -1)
+    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
 
   return 0;
-
- close_signalfd:
-  close(js->poll[0].fd);
-
- unblock_sigchld:
-  jobserver_handle_sigchld_(SIG_UNBLOCK);
-
-  return -1;
 }
 
 int jobserver_connect(struct jobserver * js)
@@ -131,8 +117,7 @@ void jobserver_close_(struct jobserver * js, bool keep)
   if(js->jobs != NULL)
     free(js->jobs);
 
-  jobserver_handle_sigchld_(SIG_UNBLOCK);
-  close(js->poll[0].fd);
+  jobserver_handle_sigchld_(SIG_UNBLOCK, &js->poll[0].fd);
 }
 
 int jobserver_close(struct jobserver * js)

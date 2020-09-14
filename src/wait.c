@@ -1,43 +1,30 @@
 #include <assert.h> // assert()
 #include <errno.h> // errno
 #include <signal.h> // SIGCHLD
-#include <sys/signalfd.h> // struct signalfd_siginfo
 #include <unistd.h> // read()
 
-#include "jobserver.h"
 #include "internal.h"
 
 int jobserver_wait_(struct jobserver * js, int timeout, char * token)
 {
-  if(poll(js->poll, 1 + (token != NULL), timeout) == -1)
-    return -1;// errno: EINTR, ENOMEM
-
-  if(js->poll[0].revents & POLLIN)
+  switch(jobserver_poll_(js->poll, timeout, token != NULL))
     {
-      struct signalfd_siginfo si;
+    case -1: return -1;// errno: EINTR, ENOMEM
+    default: return 0;
+    case 1: return read_from_pipe_(js->read, token);
+    case 2:
+    case 3:
+      {
+	jobserver_read_sigchld_(js->poll[0].fd);
 
-      int status = read(js->poll[0].fd, &si, sizeof(struct signalfd_siginfo));
+	int status = jobserver_terminate_job_(js, token, true);
+	if(status != 0) return -1;// errno: ECHILD
 
-      assert(status == sizeof(struct signalfd_siginfo));
-      assert(si.ssi_signo == SIGCHLD);
+	while(jobserver_terminate_job_(js, NULL, false) == 0) continue;
 
-      status = jobserver_terminate_job_(js, token, true);
-      if(status != 0) return -1;// errno: ECHILD
-
-      while(jobserver_terminate_job_(js, NULL, false) == 0) continue;
-
-      return 1;
+	return 1;
+      }
     }
-
-  errno = 0;
-
-  if(token != NULL
-     && js->poll[1].revents & POLLIN)
-    {
-      return read_from_pipe_(js->read, token);
-    }
-
-  return 0;
 }
 
 int jobserver_wait(struct jobserver * js, int timeout)

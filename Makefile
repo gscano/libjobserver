@@ -17,12 +17,12 @@ tst/%.o: tst/%.c
 tst/env: tst/env.o src/env.o
 	$(CC) $^ $(CFLAGS) -o $@
 
-tst/init: tst/init.o src/init.o src/env.o src/internal.o src/signal.o
+tst/init: tst/init.o src/init.o src/env.o src/internal.o src/signal.o src/poll.o
 	$(CC) $^ $(CFLAGS) -o $@
 
-tst/handle: tst/handle.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o src/signal.o
+tst/handle: tst/handle.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o src/signal.o src/poll.o
 
-tst/main: tst/main.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o src/signal.o
+tst/main: tst/main.o src/env.o src/init.o src/handle.o src/token.o src/wait.o src/internal.o src/print.o src/signal.o src/poll.o
 	$(CC) $^ $(CFLAGS) -o $@
 
 run-test: test

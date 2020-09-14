@@ -23,9 +23,12 @@ extern void close_pipe_end_(int fd);
 // handle.c
 extern int jobserver_terminate_job_(struct jobserver * js, char * token, bool with_sigchld);
 
+// poll.c
+extern int jobserver_poll_(struct pollfd poll[2], int timeout, bool use_pipe);
+
 // signal.c
-extern sigset_t jobserver_handle_sigchld_(int how);
-extern int jobserver_signalfd_sigchld_(sigset_t sigchld);
+extern int jobserver_handle_sigchld_(int how, int * fd);
+extern void jobserver_read_sigchld_(int fd);
 
 // token.c
 extern int acquire_jobserver_token_(struct jobserver * js, int wait, char * token);

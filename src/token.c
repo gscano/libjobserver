@@ -12,7 +12,7 @@ int acquire_jobserver_token_(struct jobserver * js, int wait, char * token)
     }
   else
     {
-      return jobserver_wait_(js, wait, token);
+      return jobserver_wait_(js, wait, token);// errno: ECHILD, EINTR, ENOMEM
     }
 }
 

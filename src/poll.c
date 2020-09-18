@@ -31,7 +31,7 @@ int jobserver_poll_(struct pollfd pollfd[2], int timeout, bool use_pipe)
     {
       char value;
 
-      if(read(pollfd[0].fd, &value, sizeof(char)) == -1)
+      if(read(pollfd[0].fd, &value, sizeof(char)) != 1)
 	{
 	  errno = EINTR;
 	  return -1;

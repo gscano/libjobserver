@@ -44,8 +44,10 @@ int jobserver_create(struct jobserver * js, char const * tokens);
 int jobserver_create_n(struct jobserver * js, size_t size, char token);
 int jobserver_close(struct jobserver * js);
 
-int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * data,
+int jobserver_launch_job(struct jobserver * js, int wait, bool shared, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done);
+int jobserver_terminate_job(struct jobserver * js, pid_t pid, int status);
+
 int jobserver_wait(struct jobserver * js, int timeout);
 int jobserver_collect(struct jobserver * js, int timeout);
 int jobserver_clear(struct jobserver * js);

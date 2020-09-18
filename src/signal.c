@@ -19,7 +19,12 @@ int jobserver_handle_sigchld_(int how, int * fd)
       *fd = signalfd(-1, &sigchld, 0);
 
       if(*fd == -1)
-	return -1; // errno: EMFILE, ENFILE, ENODEV, ENOMEM
+	{
+	  if(errno == ENODEV || errno == ENOMEM)
+	      errno = 0;
+
+	  return -1;// errno: 0, EMFILE, ENFILE
+	}
     }
 
   assert(sigprocmask(how, &sigchld, NULL) == 0);
@@ -37,8 +42,6 @@ void jobserver_read_sigchld_(int fd)
   assert(si.ssi_signo == SIGCHLD);
 
   (void)status;
-
-  return 0;
 }
 
 #else // ! USE_SIGNALFD = self pipe trick
@@ -46,24 +49,12 @@ void jobserver_read_sigchld_(int fd)
 #include <fcntl.h> // fcntl(), O_NONBLOCK, O_CLOEXEC
 #include <unistd.h> // close(), pipe(), write()
 
-int jobserver_pipe_(int pipefd[2])
+void fcntl_set_nonblock(int fd)
 {
-  if(pipe(pipefd) == -1)
-    return -1;
-
-  if(fcntl(pipefd[0], F_SETFL, O_NONBLOCK | O_CLOEXEC) == -1)
-    goto close;
-
-  if(fcntl(pipefd[1], F_SETFL, O_NONBLOCK | O_CLOEXEC) == -1)
-    goto close;
-
-  return 0;
-
- close:
-  close(pipefd[0]);
-  close(pipefd[1]);
-
-  return -1;
+  // Local to this process: EACCES and EAGAIN not possible
+  while(fcntl(fd, F_SETFL, O_NONBLOCK) == -1
+	&& errno == EINTR)
+    continue;
 }
 
 int self_pipe[2] = {-1, -1};
@@ -85,9 +76,14 @@ int jobserver_handle_sigchld_(int how, int * fd)
 {
   if(how == SIG_BLOCK)
     {
-      if(self_pipe[0] == -1
-	 && jobserver_pipe_(self_pipe) == -1)
-	  return -1;
+      if(self_pipe[0] == -1)
+	{
+	  if(pipe(self_pipe) == -1)
+	    return -1;// errno: EMFILE, ENFILE
+
+	  fcntl_set_nonblock(self_pipe[0]);
+	  fcntl_set_nonblock(self_pipe[1]);
+	}
 
       struct sigaction action;
       action.sa_handler = signal_handler;
@@ -117,10 +113,11 @@ int jobserver_handle_sigchld_(int how, int * fd)
 
 void jobserver_read_sigchld_(int fd)
 {
-  const size_t size = 32;
+  const size_t size = 32;//Should we empty the pipe at once with PIPE_BUF?
   char value[size];
 
-  while(read(fd, &value, size * sizeof(char)) != -1) continue;
+  while(read(fd, &value, size * sizeof(char)) != -1)
+    continue;
 }
 
 #endif

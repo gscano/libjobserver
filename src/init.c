@@ -1,3 +1,4 @@
+#include <assert.h> // assert()
 #include <errno.h> // errno
 #include <fcntl.h> // fcntl()
 #include <limits.h> // PIPE_BUF
@@ -24,7 +25,7 @@ int jobserver_init_(struct jobserver * js)
   js->poll[1].fd = js->read;
 
   if(jobserver_handle_sigchld_(SIG_BLOCK, &js->poll[0].fd) == -1)
-    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
+    return -1;// errno: EMFILE, ENFILE, (ENODEV, ENOMEM)
 
   return 0;
 }
@@ -32,22 +33,24 @@ int jobserver_init_(struct jobserver * js)
 int jobserver_connect(struct jobserver * js)
 {
   if(jobserver_getenv(js) == -1)
-    return -1;// errno: EBADF
+    return -1;// errno: EBADF, EPROTO
 
   if(js->read == -1 || js->write == -1)
-    return -1;
+    {
+      errno = ENODEV;
+      return -1;
+    }
 
   if(fcntl(js->read, F_GETFD) == -1) goto access_error;
   if(fcntl(js->write, F_GETFD) == -1) goto access_error;
 
   if(jobserver_init_(js) == -1)
-    return -1;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
+    return -1;// errno: 0, EMFILE, ENFILE
 
   return 0;
 
  access_error:
-  if(errno == EBADF)
-    errno = EACCES;// Missing a leading '+'
+  errno = EACCES;// Missing a leading '+'
 
   return -1;
 }
@@ -85,11 +88,10 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   js->read = pipefds[0];
   js->write = pipefds[1];
 
-  if(write_to_pipe_(js->write, tokens, size) == -1)
-    goto error_close;
+  assert(write_to_pipe_(js->write, tokens, size) == (ssize_t)size);
 
   if(jobserver_init_(js) == -1)
-    goto error_close;// errno: EMFILE, ENFILE, ENODEV, ENOMEM
+    goto error_close;// errno: 0, EMFILE, ENFILE
 
   if(jobserver_setenv(js) == -1)
     goto error_close_all;// errno: ENOMEM

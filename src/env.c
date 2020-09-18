@@ -49,7 +49,7 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
   char const * fds = strstr(env, MAKEFLAGS_AUTH);
   if(fds == NULL) return 0;
   fds = strchr(fds, '=');
-  if(fds == NULL) return -1;
+  if(fds == NULL) goto error_proto;
   ++fds;
 
   long int fd;
@@ -57,21 +57,30 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
 
   env = fds;
   fd = strtol(fds, (char **)&fds, 10);// errno: EINVAL, ERANGE
-  if(fds == env || errno || fd < 0 || fd > INT_MAX) goto error;
+  if(fds == env || errno) goto error_proto;
+  if(fd < 0 || fd > INT_MAX) goto error_badf;
   *read_fd = (int)fd;
 
-  if(*fds++ != ',') goto error;
+  if(*fds++ != ',') goto error_proto;
 
   env = fds;
   fd = strtol(fds, (char **)&fds, 10);// errno: EINVAL, ERANGE
-  if(fds == env || errno || fd < 0 || fd > INT_MAX) goto error;
+  if(fds == env || errno) goto error_proto;
+  if(fd < 0 || fd > INT_MAX) goto error_badf;
   *write_fd = (int)fd;
 
   return 0;
 
+ error_badf:
+  errno = EBADF;
+  goto error;
+
+ error_proto:
+  errno = EPROTO;
+
  error:
   *read_fd = *write_fd = -1;
-  errno = EBADF;
+
   return -1;
 }
 

@@ -38,7 +38,7 @@ void test_connect()
   {
     struct jobserver js;
     assert(jobserver_connect(&js) == -1);
-    assert(errno == 0);
+    assert(errno == ENODEV);
   }
 
   {

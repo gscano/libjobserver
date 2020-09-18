@@ -3,13 +3,12 @@
 #include <signal.h> // kill()
 #include <string.h> // memcpy()
 #include <stdlib.h> // exit(), realloc()
-#include <sys/wait.h> // waitpid()
 #include <unistd.h> // fork()
 
 #include "jobserver.h"
 #include "internal.h"
 
-int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * data,
+int jobserver_launch_job(struct jobserver * js, int wait, bool shared, void * data,
 			 jobserver_callback_t func, jobserver_callback_return_t done)
 {
   char token;
@@ -19,7 +18,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
   switch(status)
       {
       case  0: errno = EAGAIN; return -1;
-      case -1: return -1;
+      case -1: return -1;// errno: EBADF, ECHILD, EINTR, ENOMEM
       }
 
   if(js->current_jobs == js->max_jobs)
@@ -39,7 +38,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
     }
   else if(job->pid == 0)
     {
-      jobserver_close_(js, inherit);
+      jobserver_close_(js, shared);
       exit(func(data));
     }
   else
@@ -60,7 +59,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool inherit, void * d
   return -1;
 }
 
-static inline
+inline
 struct jobserver_job * jobserver_find_job_(struct jobserver * js, pid_t pid)
 {
   for(size_t i = 0; i < js->current_jobs; ++i)
@@ -70,23 +69,10 @@ struct jobserver_job * jobserver_find_job_(struct jobserver * js, pid_t pid)
   return NULL;
 }
 
-int jobserver_terminate_job_(struct jobserver * js, char * token, bool with_sigchld)
+void jobserver_terminate_job_(struct jobserver * js, struct jobserver_job * job,
+			      int status, char * token)
 {
-  js->stopped = -1;
-
-  int status;
-  pid_t pid = waitpid(-1, &status, with_sigchld ? 0 : WNOHANG);
-
-  if(pid <= 0) return -1;// errno: ECHILD
-
-  struct jobserver_job * job = jobserver_find_job_(js, pid);
-
-  if(job == NULL)
-    {
-      js->stopped = pid;
-      errno = ECHILD;
-      return -1;
-    }
+  assert(job != NULL);
 
   job->done(job->data, status);
 
@@ -105,6 +91,19 @@ int jobserver_terminate_job_(struct jobserver * js, char * token, bool with_sigc
     }
 
   js->current_jobs--;
+}
+
+int jobserver_terminate_job(struct jobserver * js, pid_t pid, int status)
+{
+  struct jobserver_job * job = jobserver_find_job_(js, pid);
+
+  if(job == NULL)
+    {
+      errno = ECHILD;
+      return -1;
+    }
+
+  jobserver_terminate_job_(js, job, status, NULL);
 
   return 0;
 }
@@ -115,9 +114,11 @@ int jobserver_clear(struct jobserver * js)
     {
       struct jobserver_job * job = &js->jobs[js->current_jobs - 1];
 
-      if(kill(job->pid, SIGKILL) == -1) return js->current_jobs;
+      if(kill(job->pid, SIGKILL) == -1 )
+	return js->current_jobs;
 
-      js->current_jobs--;
+      if(jobserver_wait_for_job_(js, NULL, false) == -1)
+	return js->current_jobs;
     }
 
   return 0;

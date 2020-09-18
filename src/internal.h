@@ -21,7 +21,9 @@ extern int write_to_pipe_(int fd, const char * buf, size_t count);
 extern void close_pipe_end_(int fd);
 
 // handle.c
-extern int jobserver_terminate_job_(struct jobserver * js, char * token, bool with_sigchld);
+extern struct jobserver_job * jobserver_find_job_(struct jobserver * js, pid_t pid);
+extern void jobserver_terminate_job_(struct jobserver * js, struct jobserver_job * job,
+				     int status, char * token);
 
 // poll.c
 extern int jobserver_poll_(struct pollfd poll[2], int timeout, bool use_pipe);
@@ -36,3 +38,4 @@ extern int release_jobserver_token_(struct jobserver * js, char token);
 
 // wait.c
 extern int jobserver_wait_(struct jobserver * js, int timeout, char * token);
+extern int jobserver_wait_for_job_(struct jobserver * js, char * token, bool with_sigchld);

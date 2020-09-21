@@ -19,6 +19,7 @@ struct jobserver
   bool keep_going;
 
   pid_t stopped;
+  int status;
 
   int read;
   int write;

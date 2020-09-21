@@ -88,7 +88,9 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   js->read = pipefds[0];
   js->write = pipefds[1];
 
-  assert(write_to_pipe_(js->write, tokens, size) == (ssize_t)size);
+  ssize_t ssize = write_to_pipe_(js->write, tokens, size);
+
+  assert(ssize == (ssize_t)size);
 
   if(jobserver_init_(js) == -1)
     goto error_close;// errno: 0, EMFILE, ENFILE

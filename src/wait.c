@@ -20,6 +20,7 @@ int jobserver_wait_for_job_(struct jobserver * js, char * token, bool with_sigch
   if(job == NULL)
     {
       js->stopped = pid;
+      js->status = status;
       errno = ECHILD;
       return -1;
     }

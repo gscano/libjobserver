@@ -12,9 +12,6 @@ struct jobserver_job
 
 #define JOBSERVER_FREE_TOKEN (char)0
 
-// init.c
-extern void jobserver_close_(struct jobserver * js, bool inherit);
-
 // internal.c
 extern int read_from_pipe_(int fd, char * token);
 extern int write_to_pipe_(int fd, const char * buf, size_t count);

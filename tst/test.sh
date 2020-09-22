@@ -12,3 +12,5 @@ SLEEP=/usr/bin/sleep
 
 ./main 4 $SLEEP 1 1 1 1 1 1 1 1 1 1
 ./main 4 $SLEEP 1 2 1 2 1 2 1 2 1 2
+
+./main 3 ./main.sh % @ £ @ % 3

@@ -12,6 +12,8 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
 int jobserver_setenv_(int read_fd, int write_fd,
 		      bool dry_run, bool debug, bool keep_going);
 
+void jobserver_close_(struct jobserver * js, bool inherit);
+
 struct jobserver
 {
   bool dry_run;

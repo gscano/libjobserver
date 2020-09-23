@@ -8,4 +8,6 @@ tst/init
 tst/handle
 tst/main
 
+man/jobserver_*.3
+
 *~

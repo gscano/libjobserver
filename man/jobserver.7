@@ -27,17 +27,24 @@ sharing the ability to do so with its siblings and parents.
 
 .B #include <jobserver.h>
 
-.EX
-struct jobserver
+.B struct jobserver
+.br
 {
-    bool \fIdry_run\fP;
-    bool \fIdebug\fP;
-    bool \fIkeep_going\fP;
+.in +0.5i
+.br
+.B bool \fIdry_run\fP;
+.br
+.B bool \fIdebug\fP;
+.br
+.B bool \fIkeep_going\fP;
 
-    pid_t \fIstopped\fP;
-    int \fIstatus\fP;
+.B pid_t \fIstopped\fP;
+.br
+.B int \fIstatus\fP;
 
-    ...
+.B ...
+.br
+.in
 };
 
 .B typedef int (*jobserver_callback_t)(void * \fIdata\fP);
@@ -47,8 +54,8 @@ struct jobserver
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
 .B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP, bool * \fIdebug\fP, bool * \fIkeep_going\fP);
+.br
 .B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP, bool \fIdebug\fP, bool \fIkeep_going\fP);
-.EE
 
 .SS Configuration
 A jobserver, either created or joined, can have 3
@@ -102,7 +109,7 @@ call \fBjobserver_close_\fP().
 The function \fBjobserver_close_\fP() can be called in the child when
 forking manually in order to close jobserver \fIjs\fP in the child.
 If \fIinherit\fP is true, the jobserver remains available in the child
-but a new local instance has to be created with \fBjobserver_connect\fP().
+but a new local instance has to be created with \fBjobserver_connect\fP(3).
 .PP
 
 .B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP, bool * \fIdebug\fP, bool * \fIkeep_going\fP);
@@ -131,7 +138,10 @@ corresponding to the read and write sides of the token pipe.
 
 .SH CONFORMING TO
 
-Section 13.1.1 of the
+.UR https://www.gnu.org/software/make/manual/html_node/Job-Slots.html#Job-Slots
+Section 13.1
+.UE
+of the
 .UR https://www.gnu.org/software/make/
 GNU Make documentation
 .UE .

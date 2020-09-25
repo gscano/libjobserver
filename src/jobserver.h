@@ -7,13 +7,6 @@
 #include <stdio.h> // FILE
 #include <sys/types.h> // pid_t
 
-int jobserver_getenv_(int * read_fd, int * write_fd,
-		      bool * dry_run, bool * debug, bool * keep_going);
-int jobserver_setenv_(int read_fd, int write_fd,
-		      bool dry_run, bool debug, bool keep_going);
-
-void jobserver_close_(struct jobserver * js, bool inherit);
-
 struct jobserver
 {
   bool dry_run;
@@ -58,5 +51,12 @@ int jobserver_clear(struct jobserver * js);
 int jobserver_print(FILE * stream, struct jobserver const * js,
 		    const char * separator, const char * job_separator,
 		    const char * inter_job_separator);
+
+int jobserver_getenv_(int * read_fd, int * write_fd,
+		      bool * dry_run, bool * debug, bool * keep_going);
+int jobserver_setenv_(int read_fd, int write_fd,
+		      bool dry_run, bool debug, bool keep_going);
+
+void jobserver_close_(struct jobserver * js, bool inherit);
 
 #endif/*LIBJOBSERVER_H*/

@@ -11,3 +11,8 @@ tst/main
 man/jobserver_*.3
 
 *~
+
+v*.*.*
+libjobserver-*.a
+libjobserver-*.so
+libjobserver-*.tar.gz

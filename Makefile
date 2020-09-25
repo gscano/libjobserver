@@ -4,9 +4,9 @@ MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 
 BUILDIR:=.
 DESTDIR:=/usr
-HDR_DESTDIR=$(DESTDIR)/include
-LIB_DESTDIR=$(DESTDIR)/lib
-MAN_DESTDIR=$(DESTDIR)/share/man
+HDR_DESTDIR:=$(DESTDIR)/include
+LIB_DESTDIR:=$(DESTDIR)/lib
+MAN_DESTDIR:=$(DESTDIR)/share/man
 
 NAME=libjobserver
 
@@ -66,10 +66,10 @@ dist: $(DISTFILES)
 
 INSTALL=$(HDR_DESTDIR)/jobserver.h
 INSTALL+=$(LIB_DESTDIR)/$(NAME)-$(VERSION).a $(LIB_DESTDIR)/$(NAME)-$(VERSION).so
-INSTALL+=$(addprefix $(MAN_DESTDIR)/man3/, $(addsuffix .gz, $(shell ./man/script.sh echo | cut -d' ' -f1)))
+INSTALL+=$(addprefix $(MAN_DESTDIR)/man3/jobserver__, $(addsuffix .gz, $(shell ./man/script.sh echo | cut -d' ' -f1)))
 INSTALL+=$(MAN_DESTDIR)/man7/jobserver.7.gz
 install: $(INSTALL) man/script.sh
-	@./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(MAN_DESTDIR)/man3/"$$2".gz"}' | xargs -I $$ bash -c "ln -sfv $$"
+	./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(MAN_DESTDIR)/man3/"$$2".gz"}' | xargs -I $$ bash -c "ln -sf $$"
 
 $(HDR_DESTDIR)/jobserver.h: src/jobserver.h
 	@mkdir -p $(dir $@)
@@ -79,10 +79,10 @@ $(LIB_DESTDIR)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
 	cp $< $@
 
-$(MAN_DESTDIR)/man3/%.3.gz: man/%.3
+$(MAN_DESTDIR)/man3/jobserver__%.3.gz: man/%.3
 	@mkdir -p $(dir $@)
-	@cp $< $(dir $@)jobserver__$(notdir $@)
-	gzip --quiet $(dir $@)jobserver__$(notdir $@)
+	@cp $< $@
+	gzip --quiet $@
 
 $(MAN_DESTDIR)/man7/jobserver.7.gz: man/jobserver.7
 	@mkdir -p $(dir $@)
@@ -91,3 +91,4 @@ $(MAN_DESTDIR)/man7/jobserver.7.gz: man/jobserver.7
 
 uninstall:
 	rm -f $(INSTALL)
+	./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(MAN_DESTDIR)/man3/"$$2".gz"}' | xargs -I $$ bash -c "rm -f $$"

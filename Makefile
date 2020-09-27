@@ -2,26 +2,41 @@ MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 
 .PHONY: all check run-check clean distclean dist install uninstall
 
-BUILDIR:=.
-DESTDIR:=/usr
-HDR_DESTDIR:=$(DESTDIR)/include
-LIB_DESTDIR:=$(DESTDIR)/lib
-MAN_DESTDIR:=$(DESTDIR)/share/man
+-include config.mk
+VERSION?=X.X.X
+CC?=gcc
+CFLAGS?=-W -Wall -Werror -Wextra -g -O0 #-DUSE_SIGNALFD
+BUILDIR?=.
+DESTDIR?=/usr
+HDR_DESTDIR?=$(DESTDIR)/include
+LIB_DESTDIR?=$(DESTDIR)/lib
+MAN_DESTDIR?=$(DESTDIR)/share/man
 
 NAME=libjobserver
 
--include config.mk
-
-all: $(addprefix $(BUILDIR)/$(NAME)-$(VERSION)., a so)
+all: $(BUILDIR)/$(NAME).a $(BUILDIR)/$(NAME).so
 
 SRC=$(wildcard src/*.c)
 OBJ=$(addprefix $(BUILDIR)/, $(SRC:%.c=%.o))
+
+$(BUILDIR)/$(NAME).a: $(BUILDIR)/$(NAME)-$(VERSION).a
+	ln -sf $(notdir $<) $@
+
+$(BUILDIR)/$(NAME).so: $(BUILDIR)/$(NAME)-$(VERSION).so
+	ln -sf $(notdir $<) $@
+
+$(BUILDIR)/$(NAME)-$(VERSION).a: $(OBJ)
+	ar -rc $@ $(OBJ)
+	ranlib $@
+
+$(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
+	$(CC) -shared -Wl,-soname,$@ -o $@ $^
 
 -include $(BUILDIR)/src/%.d
 
 $(BUILDIR)/src/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC $< $(CFLAGS) -MD -o $@ #-flto
+	$(CC) -c -fPIC -flto $(CFLAGS) -MD -o $@ $<
 
 CHECK=env init handle main
 check: $(addprefix $(BUILDIR)/tst/, $(CHECK))
@@ -30,23 +45,21 @@ check: $(addprefix $(BUILDIR)/tst/, $(CHECK))
 
 $(BUILDIR)/tst/%.o: tst/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c $< $(CFLAGS) -I src -MD -o $@
+	$(CC) -c $(CFLAGS) -I src -MD -o $@ $<
 
-$(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(OBJ)
+$(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/$(NAME).a
 	@mkdir -p $(dir $@)
-	$(CC) $^ $(CFLAGS) -o $@
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(BUILDIR)/tst/main: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
+	@mkdir -p $(dir $@)
+	$(CC) -L $(BUILDIR) -o $@ $< -ljobserver
 
 run-check: check
 
-$(BUILDIR)/$(NAME)-$(VERSION).a: $(OBJ)
-	ar -rc $@ $(OBJ)
-	ranlib $@
-
-$(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
-	$(CC) -shared -Wl,-soname,$@.so -o $@ $^
-
 clean:
 	rm -f $(addprefix $(BUILDIR)/, $(NAME).a $(NAME).so)
+	rm -f $(addprefix $(BUILDIR)/, $(NAME)-$(VERSION).a $(NAME)-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK))
@@ -66,6 +79,7 @@ dist: $(DISTFILES)
 
 INSTALL=$(HDR_DESTDIR)/jobserver.h
 INSTALL+=$(LIB_DESTDIR)/$(NAME)-$(VERSION).a $(LIB_DESTDIR)/$(NAME)-$(VERSION).so
+INSTALL+=$(LIB_DESTDIR)/$(NAME).a $(LIB_DESTDIR)/$(NAME).so
 INSTALL+=$(addprefix $(MAN_DESTDIR)/man3/jobserver__, $(addsuffix .gz, $(shell ./man/script.sh echo | cut -d' ' -f1)))
 INSTALL+=$(MAN_DESTDIR)/man7/jobserver.7.gz
 install: $(INSTALL) man/script.sh
@@ -74,6 +88,10 @@ install: $(INSTALL) man/script.sh
 $(HDR_DESTDIR)/jobserver.h: src/jobserver.h
 	@mkdir -p $(dir $@)
 	cp $< $@
+
+$(LIB_DESTDIR)/$(NAME).%: $(LIB_DESTDIR)/$(NAME)-$(VERSION).%
+	@mkdir -p $(dir $@)
+	ln -sf $(notdir $<) $@
 
 $(LIB_DESTDIR)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)

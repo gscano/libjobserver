@@ -13,8 +13,8 @@ struct jobserver_job
 #define JOBSERVER_FREE_TOKEN (char)0
 
 // internal.c
-extern int read_from_pipe_(int fd, char * token);
-extern int write_to_pipe_(int fd, const char * buf, size_t count);
+extern ssize_t read_from_pipe_(int fd, char * token);
+extern ssize_t write_to_pipe_(int fd, const char * buf, size_t count);
 extern void close_pipe_end_(int fd);
 
 // handle.c

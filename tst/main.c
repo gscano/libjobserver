@@ -49,7 +49,13 @@ int test(void * data_)
   assert(setenv(LOCAL_ENV, data->id, 1) == 0);
 
   extern char ** environ;
-  assert(execve(data->exe, args, environ) == 0);
+  int status = execve(data->exe, args, environ);
+
+  if(status != 0)
+    {
+      fprintf(stderr, "Execve failed: %m\n");
+      assert(false);
+    }
 
   return 0;
 }

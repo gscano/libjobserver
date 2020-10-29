@@ -23,9 +23,10 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool shared, void * da
 
   if(js->current_jobs == js->max_jobs)
     {
-      js->jobs = realloc(js->jobs, (2 * js->max_jobs + 1) * sizeof(struct jobserver_job));
+      const size_t max_jobs = JOBSERVER_SIZE_GEOME_PROG * js->max_jobs + JOBSERVER_SIZE_ARITH_PROG;
+      js->jobs = realloc(js->jobs, max_jobs * sizeof(struct jobserver_job));
       if(js->jobs == NULL) goto error;// errno: ENOMEM
-      js->max_jobs = 2 * js->max_jobs + 1;
+      js->max_jobs = max_jobs;
     }
 
   struct jobserver_job * job = &js->jobs[js->current_jobs];

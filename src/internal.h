@@ -12,6 +12,9 @@ struct jobserver_job
 
 #define JOBSERVER_FREE_TOKEN (char)0
 
+#define JOBSERVER_SIZE_GEOME_PROG 2
+#define JOBSERVER_SIZE_ARITH_PROG 8
+
 // internal.c
 extern ssize_t read_from_pipe_(int fd, char * token);
 extern ssize_t write_to_pipe_(int fd, const char * buf, size_t count);

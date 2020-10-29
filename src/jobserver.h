@@ -19,6 +19,7 @@ struct jobserver
   int read;
   int write;
 
+  size_t size;
   bool has_free_token;
 
   size_t current_jobs;

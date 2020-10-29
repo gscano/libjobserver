@@ -15,6 +15,7 @@ int jobserver_init_(struct jobserver * js)
 {
   js->stopped = -1;
 
+  js->size = 0;
   js->has_free_token = true;
 
   js->current_jobs = js->max_jobs = 0;
@@ -88,9 +89,9 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   js->read = pipefds[0];
   js->write = pipefds[1];
 
-  ssize_t ssize = write_to_pipe_(js->write, tokens, size);
+  js->size = write_to_pipe_(js->write, tokens, size);
 
-  assert(ssize == (ssize_t)size);
+  assert(js->size == size);
 
   if(jobserver_init_(js) == -1)
     goto error_close;// errno: 0, EMFILE, ENFILE
@@ -127,9 +128,25 @@ void jobserver_close_(struct jobserver * js, bool keep)
 int jobserver_close(struct jobserver * js)
 {
   if(js->current_jobs > 0)
-    return -1;
+    {
+      errno = EBUSY;
+      return -1;
+    }
+
+  char tokens[js->size];
+
+  if(jobserver_has_tokens(js->poll[1]) != 0)
+    return -1; // errno: ENOMEM
+
+  size_t size = read(js->read, tokens, js->size);
 
   jobserver_close_(js, false);
+
+  if(size < js->size)
+    {
+      errno = EIDRM;
+      return -1;
+    }
 
   return 0;
 }

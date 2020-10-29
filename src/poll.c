@@ -42,3 +42,11 @@ int jobserver_poll_(struct pollfd pollfd[2], int timeout, bool use_pipe)
 }
 
 #endif
+
+int jobserver_has_tokens(struct pollfd pipe)
+{
+  if(poll(&pipe, 1, 0) == -1)
+    return -1; // errno: ENOMEM
+
+  return !(pipe.revents & POLLIN);
+}

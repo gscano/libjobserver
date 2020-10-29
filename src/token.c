@@ -24,7 +24,7 @@ int release_jobserver_token_(struct jobserver * js, char token)
     }
   else
     {
-      // Ignore errors, someone messed up the pipe anyway
+      // Ignore errors, someone messed the pipe up anyway
       write_to_pipe_(js->write, &token, 1);
     }
 

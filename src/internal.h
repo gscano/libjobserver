@@ -27,6 +27,7 @@ extern void jobserver_terminate_job_(struct jobserver * js, struct jobserver_job
 
 // poll.c
 extern int jobserver_poll_(struct pollfd poll[2], int timeout, bool use_pipe);
+extern int jobserver_has_tokens(struct pollfd pipe);
 
 // signal.c
 extern int jobserver_handle_sigchld_(int how, int * fd);

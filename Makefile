@@ -1,16 +1,18 @@
 MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 
-.PHONY: all check run-check clean distclean dist install uninstall
-
 -include config.mk
 VERSION?=X.X.X
 CC?=gcc
 CFLAGS?=-W -Wall -Werror -Wextra -g -O0 #-DUSE_SIGNALFD
-BUILDIR?=.
+BUILDIR?=. #v$(VERSION)
 DESTDIR?=/usr
 HDR_DESTDIR?=$(DESTDIR)/include
 LIB_DESTDIR?=$(DESTDIR)/lib
 MAN_DESTDIR?=$(DESTDIR)/share/man
+
+MAKEFLAGS=--no-builtin-rules --no-builtin-variables
+
+.PHONY: all check run-check clean distclean dist install uninstall
 
 NAME=libjobserver
 
@@ -32,20 +34,28 @@ $(BUILDIR)/$(NAME)-$(VERSION).a: $(OBJ)
 $(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
 	$(CC) -shared -Wl,-soname,$@ -o $@ $^
 
--include $(BUILDIR)/src/%.d
+-include $(OBJ:%.o=%.d)
 
 $(BUILDIR)/src/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC -flto $(CFLAGS) -MD -o $@ $<
+	$(CC) -c -fPIC -flto $(CFLAGS) -MMD -o $@ $<
 
-CHECK=env init handle main
-check: $(addprefix $(BUILDIR)/tst/, $(CHECK))
+CHECK=env init handle
+CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
 
--include $(BUILDIR)/tst/%.d
+.PRECIOUS: $(CHECK_OBJ)
+.PRECIOUS: $(addprefix $(BUILDIR)/tst/, $(CHECK))
+
+check: $(CHECK_OBJ:%.o=%.ok)
+
+RUNCHECK=main
+run-check: $(RUNCHECK)
+
+-include $(CHECK_OBJ:%.o=%.d)
 
 $(BUILDIR)/tst/%.o: tst/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c $(CFLAGS) -I src -MD -o $@ $<
+	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
 
 $(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/$(NAME).a
 	@mkdir -p $(dir $@)
@@ -55,14 +65,16 @@ $(BUILDIR)/tst/main: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
 	@mkdir -p $(dir $@)
 	$(CC) -L $(BUILDIR) -o $@ $< -ljobserver
 
-run-check: check
+$(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
+	$< > $<.ko 2>&1
+	$(if $$? 0, mv -f -u $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
 clean:
 	rm -f $(addprefix $(BUILDIR)/, $(NAME).a $(NAME).so)
 	rm -f $(addprefix $(BUILDIR)/, $(NAME)-$(VERSION).a $(NAME)-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
-	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK))
+	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok))
 
 distclean: clean
 	rm -f `find . -name '*~'`

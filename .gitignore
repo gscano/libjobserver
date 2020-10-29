@@ -8,11 +8,15 @@ tst/init
 tst/handle
 tst/main
 
+tst/*.ok
+
 man/jobserver_*.3
 
 *~
 
 v*.*.*
+libjobserver.a
+libjobserver.so
 libjobserver-*.a
 libjobserver-*.so
 libjobserver-*.tar.gz

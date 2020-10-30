@@ -136,7 +136,9 @@ int jobserver_close(struct jobserver * js)
   char tokens[js->size];
 
   if(jobserver_has_tokens(js->poll[1]) != 0)
-    return -1; // errno: ENOMEM
+    {
+      errno = EAGAIN;
+    }
 
   size_t size = read(js->read, tokens, js->size);
 

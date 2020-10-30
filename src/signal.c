@@ -26,6 +26,10 @@ int jobserver_handle_sigchld_(int how, int * fd)
 	  return -1;// errno: 0, EMFILE, ENFILE
 	}
     }
+  else // SIG_UNBLOCK
+    {
+      close(*fd);
+    }
 
   assert(sigprocmask(how, &sigchld, NULL) == 0);
 

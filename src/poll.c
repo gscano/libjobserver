@@ -8,12 +8,15 @@ int jobserver_poll_(struct pollfd pollfd[2], int timeout, bool use_pipe)
   pollfd[1].revents = 0;
 
   if(poll(pollfd, 1 + use_pipe, timeout) == -1)
-    return -1; // errno: EINTR, ENOMEM
+    return -1;// errno: EINTR, ENOMEM
+
+  // The pipe is open in this process, POLLERR and POLLUP would only appear
+  // if the current process closes the pipe manually: should it be our concern?
 
   return 2 * (pollfd[0].revents & POLLIN) + (pollfd[1].revents & POLLIN);
 }
 
-#else
+#else // ! USE_SIGNALFD = self pipe trick
 
 #include <errno.h> // errno
 #include <unistd.h> // read()
@@ -46,7 +49,7 @@ int jobserver_poll_(struct pollfd pollfd[2], int timeout, bool use_pipe)
 int jobserver_has_tokens(struct pollfd pipe)
 {
   if(poll(&pipe, 1, 0) == -1)
-    return -1; // errno: ENOMEM
+    return -1;// errno: ENOMEM
 
   return !(pipe.revents & POLLIN);
 }

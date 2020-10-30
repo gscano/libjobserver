@@ -12,14 +12,13 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool shared, void * da
 			 jobserver_callback_t func, jobserver_callback_return_t done)
 {
   char token;
-
   int status = acquire_jobserver_token_(js, wait, &token);
 
   switch(status)
-      {
-      case  0: errno = EAGAIN; return -1;
-      case -1: return -1;// errno: EBADF, ECHILD, EINTR, ENOMEM
-      }
+    {
+    case  0: errno = EAGAIN; return -1;
+    case -1: return -1;// errno: EBADF, ECHILD, EINTR, ENOMEM
+    }
 
   if(js->current_jobs == js->max_jobs)
     {

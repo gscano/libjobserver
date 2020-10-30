@@ -13,7 +13,7 @@ int jobserver_wait_for_job_(struct jobserver * js, char * token, bool with_sigch
   int status;
   pid_t pid = waitpid(-1, &status, with_sigchld ? 0 : WNOHANG);
 
-  if(pid <= 0) return -1;// errno: ECHILD
+  if(pid <= 0) return -1;// errno: 0, (with_sigchld ?)EINTR
 
   struct jobserver_job * job = jobserver_find_job_(js, pid);
 
@@ -43,12 +43,12 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
 	jobserver_read_sigchld_(js->poll[0].fd);
 
 	int status = jobserver_wait_for_job_(js, token, true);
-	if(status != 0) return -1;// errno: ECHILD
+	if(status != 0) return -1;// errno: ECHILD, EINTR
 
-	while(jobserver_wait_for_job_(js, NULL, false) == 0)
+	while((status = jobserver_wait_for_job_(js, NULL, false)) == 0)
 	  continue;
 
-	return 1;// errno: ECHILD
+	return js->stopped == -1 ? 1 : -1;// errno: ECHILD
       }
     }
 }

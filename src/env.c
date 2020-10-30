@@ -1,4 +1,3 @@
-#include <assert.h> // assert()
 #include <stdbool.h> // bool
 #include <errno.h> // errno
 #include <limits.h> // INT_MAX

@@ -42,6 +42,7 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		     "stopped: %d" "%s"
 		     "read: %d" "%s"
 		     "write: %d" "%s"
+		     "size: %zu" "%s"
 		     "has-free-token: %d" "%s"
 		     "jobs: %zu",
 		     js->dry_run, separator,
@@ -50,6 +51,7 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		     js->stopped, separator,
 		     js->read, separator,
 		     js->write, separator,
+		     js->size, separator,
 		     js->has_free_token, separator,
 		     js->current_jobs);
 

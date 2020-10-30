@@ -1,4 +1,3 @@
-#include <assert.h> // assert()
 #include <errno.h> // errno
 #include <signal.h> // SIGCHLD
 #include <unistd.h> // read()

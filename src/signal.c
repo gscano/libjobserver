@@ -2,6 +2,8 @@
 #include <errno.h> // errno
 #include <signal.h> // sigaddset(), SIGCHLD, SIG_BLOCK, SIG_UNBLOCK, sigemptyset(), sigprocmask()
 
+#define _(X) {int status = (X); assert(status == 0); (void)status;}
+
 #if USE_SIGNALFD
 
 #include <sys/signalfd.h> // signalfd(), struct signalfd_siginfo
@@ -11,8 +13,8 @@ int jobserver_handle_sigchld_(int how, int * fd)
 {
   sigset_t sigchld;
 
-  assert(sigemptyset(&sigchld) == 0);
-  assert(sigaddset(&sigchld, SIGCHLD) == 0);
+  _(sigemptyset(&sigchld));
+  _(sigaddset(&sigchld, SIGCHLD));
 
   if(how == SIG_BLOCK)
     {
@@ -31,7 +33,7 @@ int jobserver_handle_sigchld_(int how, int * fd)
       close(*fd);
     }
 
-  assert(sigprocmask(how, &sigchld, NULL) == 0);
+  _(sigprocmask(how, &sigchld, NULL));
 
   return 0;
 }
@@ -91,10 +93,10 @@ int jobserver_handle_sigchld_(int how, int * fd)
 
       struct sigaction action;
       action.sa_handler = signal_handler;
-      assert(sigemptyset(&action.sa_mask) == 0);
-      assert(sigaddset(&action.sa_mask, SIGCHLD) == 0);
+      _(sigemptyset(&action.sa_mask));
+      _(sigaddset(&action.sa_mask, SIGCHLD));
       action.sa_flags = SA_NOCLDSTOP;
-      assert(sigaction(SIGCHLD, &action, NULL) == 0);
+      _(sigaction(SIGCHLD, &action, NULL));
 
       *fd = self_pipe[0];
     }
@@ -102,9 +104,9 @@ int jobserver_handle_sigchld_(int how, int * fd)
     {
       struct sigaction action;
       action.sa_handler = SIG_DFL;
-      assert(sigemptyset(&action.sa_mask) == 0);
+      _(sigemptyset(&action.sa_mask));
       action.sa_flags = 0;
-      assert(sigaction(SIGCHLD, &action, NULL) == 0);
+      _(sigaction(SIGCHLD, &action, NULL));
 
       close(self_pipe[0]);
       close(self_pipe[1]);

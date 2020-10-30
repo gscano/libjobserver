@@ -58,6 +58,7 @@ sharing the ability to do so with its siblings and parents.
 .B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP, bool \fIdebug\fP, bool \fIkeep_going\fP);
 
 .SS Configuration
+
 A jobserver, either created or joined, can have 3
 properties related to the actions that should be
 undertaken. Depending on the status of each flag, a
@@ -86,38 +87,44 @@ the terminated process might not be a job. In this case,
 \fB-1\fP is returned, \fIerrno\fP is set to \fBECHILD\fP, and
 the \fIstopped\fP and \fIstatus\fP fields of the \fBjobserver\fP
 structure receive the pid and the exit status of the stopped
-process (as per \fBwait\fP(2)).
+process (as per \fBwaitpid\fP(2)).
 
 .IP
 * If the application waited for a child to exit (see \fBwait\fP(2)),
 the waited process could be a jobserver job. In this case,
 \fBjobserver_terminate_job\fP(3) \fImust be called\fP. Failure
 to do so will cause the \fBjobserver_wait\fP(3) or
-\fBjobserver_collect\fP(3) functions to never return \fB0\fP.
+\fBjobserver_collect\fP(3) functions to \fBnever\fP return \fB0\fP.
 
 .PP
 It is important to note that when a fork happens outside of
 \fBjobserver_launch_job\fP(3), the jobserver would be shared with
 the new process, including the signal handler. You might want to
-call \fBjobserver_close_\fP().
+call \fBjobserver_close\fP(3) or \fBjobserver_close_\fP().
 
 .SS Internal functions
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
 .IP
-The function \fBjobserver_close_\fP() can be called in the child when
+The function \fBjobserver_close_\fP() can be called in a child when
 forking manually in order to close jobserver \fIjs\fP in the child.
+In particular, the function cleans up the \fIjs\fP data structure
+and resets the signal handler for \fBSIGCHLD\fP to its default value.
 If \fIinherit\fP is true, the jobserver remains available in the child
 but a new local instance has to be created with \fBjobserver_connect\fP(3).
 .PP
 
 .B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP, bool * \fIdebug\fP, bool * \fIkeep_going\fP);
 
+.IP
+See \fBjobserver_getenv_\fP(3).
+.PP
+
 .B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP, bool \fIdebug\fP, bool \fIkeep_going\fP);
 
 .IP
-See \fBjobserver_getenv_\fP(3) and \fBjobserver_setenv_\fP(3).
+See \fBjobserver_setenv_\fP(3).
 .PP
 
 .SH ENVIRONMENT
@@ -148,7 +155,6 @@ GNU Make documentation
 
 .SH SEE ALSO
 
-.BR jobserver (7),
 .BR jobserver_clear (3),
 .BR jobserver_collect (3),
 .BR jobserver_connect (3),

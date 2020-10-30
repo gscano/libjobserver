@@ -27,27 +27,30 @@ and
 .BR jobserver_create_n ()
 functions create a new jobserver \fIjs\fP and publish it to the environment.
 The jobserver is initialized with either a null-terminated word of
-\fItokens\fP or with \fIsize\fP \fItoken\fPs.
+\fItokens\fP or with \fIsize\fP \fItoken\fPs as additional job slots
+to the free token.
+.br
+To create a jobserver that spawns one child after the other, no additional
+tokens need be passed. In general, if the jobserver is created after a
+\fB-j X\fP option, \fIsize\fP or \fIstrlen(tokens)\fP should be \fBX\fP-1.
 
 The
 .BR jobserver_close ()
-function closes jobserver \fIjs\fP if there are no jobs remaining.
+function closes jobserver \fIjs\fP if there are no remaining jobs.
 Note that it does not modify the environment variable, use
-.BR jobserver_unsetenv ()
+.BR jobserver_unsetenv (3)
 to achieve this.
 
 .SH RETURN VALUE
 
-On success, the \fBjobserver_open\fP() function returns \fB0\fP.
-On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
+On success, the \fBjobserver_open\fP() and \fBjobserver_close\fP()
+functions return \fB0\fP.
 
 On success, the \fBjobserver_create\fP() and \fBjobserver_create_n\fP() functions
-return the number of tokens available in the pipe of the new jobserver plus one;
-that is \fIsize\fP + 1 or strlen(\fItokens\fP) + 1 (see \fBjobserver\fP(7)).
-On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
+return the number of possible parallel jobs, that is the number tokens available
+in the jobserver pipe plus one (\fIsize\fP + 1 or strlen(\fItokens\fP) + 1).
 
-On success, the \fBjobserver_close\fP() function returns \fB0\fP.
-On error, \fB-1\fP is returned.
+On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
 
 \fB\fP
 
@@ -55,14 +58,14 @@ On error, \fB-1\fP is returned.
 
 .TP
 .B \fB0\fP
-(\fBUSE_SIGNALFD\fP defined)
+(Linux only)
 The signalfd file descriptor could not be created.
 
 .SS \fBjobserver_connect\fP()
 .TP
 .B EACCES
 The jobserver pipe is closed because the current process was spawned
-by Make without the \(cq+\(cq prefix, see section 13.1.1 of the
+by Make without the \(cq+\(cq prefix, see section 13.1 of the
 .UR https://www.gnu.org/software/make/
 GNU Make documentation
 .UE .
@@ -79,7 +82,7 @@ Error while parsing the environment.
 .SS \fBjobserver_create\fP() and \fBjobserver_create_n\fP()
 .TP
 .B EINVAL
-The number of tokens in the pipe exceeds PIPE_BUF.
+The number of tokens in the pipe exceeds \fBPIPE_BUF\fP.
 .TP
 .B EMFILE
 Too many file descriptors for the process.
@@ -89,6 +92,19 @@ Too many file descriptors for the system.
 .TP
 .B ENOMEM
 Not enough memory to set the environment variable.
+
+.SS \fBjobserver_close\fP()
+.TP
+.B EAGAIN
+Cannot count tokens, call \fPjobserver_wait\fP(3) and try again.
+.TP
+.B EBUSY
+Not all jobs have been waited for yet,
+call \fPjobserver_collect\fP(3) and try again.
+.TP
+.B EIDRM
+No jobs remain but some tokens have not been given back.
+You might want to inform the user.
 
 .SH SEE ALSO
 

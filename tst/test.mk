@@ -1,7 +1,7 @@
 all:
 	@+echo "MAKEFLAGS:"$(MAKEFLAGS)
 
-test:
+test1:
 	@+echo "MAKEFLAGS:"$(MAKEFLAGS)
 	make -f test.mk -j2 test2 --warn-undefined-variables -k
 
@@ -11,4 +11,4 @@ test2:
 
 test3:
 	@+echo "MAKEFLAGS:"$(MAKEFLAGS)
-	make -f test.mk -I .. test -- NAME=VALUE
+	make -f test.mk -I .. test1 -- NAME=VALUE

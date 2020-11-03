@@ -21,8 +21,9 @@ int test(void * data_)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "Launching job %s '%s %s'.\n",
+  fprintf(stdout, "Launching job %s '%s  %s'.\n",
 	  data->id, data->exe, data->arg);
+  fflush(stdout);
 
   int size = 2;
   char * pos = data->arg;
@@ -64,8 +65,9 @@ void end(void * data_, int status)
 {
   struct data * data = data_;
 
-  fprintf(stderr, "Job %s '%s %s' collected with status: %d\n",
+  fprintf(stdout, "Job %s '%s  %s' collected with status: %d\n",
 	  data->id, data->exe, data->arg, WEXITSTATUS(status));
+  fflush(stdout);
 }
 
 void connect_to(struct jobserver * js, char * arg)
@@ -137,8 +139,6 @@ void prepare_jobs(struct data * jobs, size_t size, char * exe, char ** args)
       jobs[i].id[length + 1] = '\0';
 
       jobs[i].arg = args[i];
-
-      fprintf(stderr, "Job %s '%s %s' prepared.\n", jobs[i].id, jobs[i].exe, jobs[i].arg);
     }
 }
 
@@ -178,6 +178,8 @@ int main(int argc, char ** argv)
 #endif
     }
 
+ collect:;
+
   int status;
   while((status = jobserver_collect(&js, -1)) != 0)
     {
@@ -190,8 +192,18 @@ int main(int argc, char ** argv)
 	}
     }
 
-  assert(jobserver_clear(&js) == 0);
-  assert(jobserver_close(&js) == 0);
+  while((status = jobserver_close(&js)) != 0)
+    {
+      if(errno == EAGAIN || errno == EBUSY) goto collect;
+      else
+	{
+	  assert(errno == EIDRM);
+	  fprintf(stderr, "Error: missing tokens\n");
+	  jobserver_print(stderr, &js, ", ", ",", "\n");
+	  fprintf(stderr, "\n");
+	  return EXIT_FAILURE;
+	}
+    }
 
   return EXIT_SUCCESS;
 }

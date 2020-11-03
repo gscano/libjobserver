@@ -3,8 +3,9 @@ MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 -include config.mk
 VERSION?=X.X.X
 CC?=gcc
-CFLAGS?=-W -Wall -Werror -Wextra -g -O0 #-DUSE_SIGNALFD
-BUILDIR?=. #v$(VERSION)
+CFLAGS?=-W -Wall -Werror -Wextra -g -O0 # -DUSE_SIGNALFD
+T_CFLAGS?= #-DNDEBUG
+BUILDIR?=.
 DESTDIR?=/usr
 HDR_DESTDIR?=$(DESTDIR)/include
 LIB_DESTDIR?=$(DESTDIR)/lib
@@ -38,7 +39,7 @@ $(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
 
 $(BUILDIR)/src/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC -flto $(CFLAGS) -MMD -o $@ $<
+	$(CC) -c -fPIC -flto $(CFLAGS) $(T_CFLAGS) -MMD -o $@ $<
 
 CHECK=env init handle
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
@@ -46,10 +47,9 @@ CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
 .PRECIOUS: $(CHECK_OBJ)
 .PRECIOUS: $(addprefix $(BUILDIR)/tst/, $(CHECK))
 
-check: $(CHECK_OBJ:%.o=%.ok)
+check: $(CHECK_OBJ:%.o=%.ok) run-check
 
-RUNCHECK=main
-run-check: $(RUNCHECK)
+run-check: $(BUILDIR)/tst/main
 
 -include $(CHECK_OBJ:%.o=%.d)
 
@@ -61,9 +61,9 @@ $(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/$(NAME).a
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BUILDIR)/tst/main: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
+$(BUILDIR)/tst/main-so: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
 	@mkdir -p $(dir $@)
-	$(CC) -L $(BUILDIR) -o $@ $< -ljobserver
+	$(CC) $(CFLAGS) -L $(BUILDIR) -o $@ $< -ljobserver
 
 $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$< > $<.ko 2>&1
@@ -75,6 +75,7 @@ clean:
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok))
+	rm -f $(BUILDIR)/tst/main
 
 distclean: clean
 	rm -f `find . -name '*~'`

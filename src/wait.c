@@ -35,7 +35,7 @@ int jobserver_wait_(struct jobserver * js, int timeout, char * token)
     {
     case -1: return -1;// errno: EINTR, ENOMEM
     default: return 0;
-    case 1: return read_from_pipe_(js->read, token);// errno: EBADF
+    case 1: return read_from_pipe_(js->poll[1].fd, token);// errno: EBADF
     case 2:
     case 3:
       {

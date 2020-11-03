@@ -124,7 +124,7 @@ void test_create()
     assert(jobserver_create(&js, "abcde") == 6);
 
     char buffer[10] = {0};
-    assert(read(js.read, buffer, 10) == 5);
+    assert(read(js.poll[1].fd, buffer, 10) == 5);
     assert(strcmp(buffer, "abcde") == 0);
     assert(write(js.write, buffer, 5) == 5);
 
@@ -137,7 +137,7 @@ void test_create()
     assert(jobserver_create_n(&js, 4, 'a') == 5);
 
     char buffer[10] = {0};
-    assert(read(js.read, buffer, 10) == 4);
+    assert(read(js.poll[1].fd, buffer, 10) == 4);
     assert(strcmp(buffer, "aaaa") == 0);
     assert(write(js.write, buffer, 4) == 4);
 

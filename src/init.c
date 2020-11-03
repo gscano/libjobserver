@@ -16,8 +16,6 @@ int jobserver_init_(struct jobserver * js, size_t size)
   js->stopped = -1;
   js->status = 0;
 
-  // Caller should set js->read and js->write before calling the function.
-
   js->size = size;
   js->has_free_token = true;
 
@@ -25,8 +23,6 @@ int jobserver_init_(struct jobserver * js, size_t size)
   js->jobs = NULL;
 
   js->poll[0].events = js->poll[1].events = POLLIN;
-
-  js->poll[1].fd = js->read;
 
   if(jobserver_handle_sigchld_(SIG_BLOCK, &js->poll[0].fd) == -1)
     return -1;// errno: EMFILE, ENFILE, (ENODEV, ENOMEM)
@@ -39,13 +35,13 @@ int jobserver_connect(struct jobserver * js)
   if(jobserver_getenv(js) == -1)
     return -1;// errno: EBADF, EPROTO
 
-  if(js->read == -1 || js->write == -1)
+  if(js->poll[1].fd == -1 || js->write == -1)
     {
       errno = ENODEV;
       return -1;
     }
 
-  if(fcntl(js->read, F_GETFD) == -1) goto access_error;
+  if(fcntl(js->poll[1].fd, F_GETFD) == -1) goto access_error;
   if(fcntl(js->write, F_GETFD) == -1) goto access_error;
 
   if(jobserver_init_(js, 0) == -1)
@@ -84,7 +80,7 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       return -1;
     }
 
-  js->read = -1;
+  js->poll[1].fd = -1;
   js->write = -1;
 
   if(size > 0)
@@ -94,7 +90,7 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       if(pipe(pipefds) == -1)
 	goto close;// errno: EMFILE, ENFILE
 
-      js->read = pipefds[0];
+      js->poll[1].fd = pipefds[0];
       js->write = pipefds[1];
 
       ssize_t size_ = write_to_pipe_(js->write, tokens, size);
@@ -112,7 +108,7 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   return size + 1;
 
  close:
-  jobserver_close_(js, js->read == -1);
+  jobserver_close_(js, js->poll[1].fd == -1);
 
   return -1;
 }
@@ -121,7 +117,7 @@ void jobserver_close_(struct jobserver * js, bool keep)
 {
   if(!keep)
     {
-      close(js->read);
+      close(js->poll[1].fd);
       close(js->write);
     }
 
@@ -151,7 +147,7 @@ int jobserver_close(struct jobserver * js)
 	}
 
       char tokens[js->size];
-      size_t size = read(js->read, tokens, js->size);
+      size_t size = read(js->poll[1].fd, tokens, js->size);
 
       jobserver_close_(js, false);
 

@@ -168,13 +168,13 @@ int jobserver_setenv_(int read_fd, int write_fd,
 
 int jobserver_getenv(struct jobserver * js)
 {
-  return jobserver_getenv_(&js->read, &js->write,
+  return jobserver_getenv_(&js->poll[1].fd, &js->write,
 			   &js->dry_run, &js->debug, &js->keep_going);
 }
 
 int jobserver_setenv(struct jobserver const * js)
 {
-  return jobserver_setenv_(js->read, js->write,
+  return jobserver_setenv_(js->poll[1].fd, js->write,
 			   js->dry_run, js->debug, js->keep_going);
 }
 

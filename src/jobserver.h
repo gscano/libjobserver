@@ -16,9 +16,6 @@ struct jobserver
   pid_t stopped;
   int status;
 
-  int read;
-  int write;
-
   size_t size;
   bool has_free_token;
 
@@ -26,7 +23,8 @@ struct jobserver
   size_t max_jobs;
   struct jobserver_job * jobs;
 
-  struct pollfd poll[2];// [SIGCHLD, token pipe]
+  struct pollfd poll[2];// [SIGCHLD, token pipe (read)]
+  int write;// token pipe (write)
 };
 
 typedef int (*jobserver_callback_t)(void * data);

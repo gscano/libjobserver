@@ -11,11 +11,14 @@
 #include "internal.h"
 
 static inline
-int jobserver_init_(struct jobserver * js)
+int jobserver_init_(struct jobserver * js, size_t size)
 {
   js->stopped = -1;
+  js->status = 0;
 
-  js->size = 0;
+  // Caller should set js->read and js->write before calling the function.
+
+  js->size = size;
   js->has_free_token = true;
 
   js->current_jobs = js->max_jobs = 0;
@@ -45,7 +48,7 @@ int jobserver_connect(struct jobserver * js)
   if(fcntl(js->read, F_GETFD) == -1) goto access_error;
   if(fcntl(js->write, F_GETFD) == -1) goto access_error;
 
-  if(jobserver_init_(js) == -1)
+  if(jobserver_init_(js, 0) == -1)
     return -1;// errno: 0, EMFILE, ENFILE
 
   return 0;
@@ -81,32 +84,35 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       return -1;
     }
 
-  int pipefds[2];
+  js->read = -1;
+  js->write = -1;
 
-  if(pipe(pipefds) == -1)
-    return -1;// errno: EMFILE, ENFILE
+  if(size > 0)
+    {
+      int pipefds[2];
 
-  js->read = pipefds[0];
-  js->write = pipefds[1];
+      if(pipe(pipefds) == -1)
+	goto close;// errno: EMFILE, ENFILE
 
-  js->size = write_to_pipe_(js->write, tokens, size);
+      js->read = pipefds[0];
+      js->write = pipefds[1];
 
-  assert(js->size == size);
+      ssize_t size_ = write_to_pipe_(js->write, tokens, size);
+      assert(size_ != -1);
+      assert((size_t)size_ == size);
+      (void)size_;
+    }
 
-  if(jobserver_init_(js) == -1)
-    goto error_close;// errno: 0, EMFILE, ENFILE
+  if(jobserver_init_(js, size) == -1)
+    goto close;// errno: 0, EMFILE, ENFILE
 
   if(jobserver_setenv(js) == -1)
-    goto error_close_all;// errno: ENOMEM
+    goto close;// errno: ENOMEM
 
   return size + 1;
 
- error_close_all:
-  jobserver_close_(js, true);
-
- error_close:
-  close(js->read);
-  close(js->write);
+ close:
+  jobserver_close_(js, js->read == -1);
 
   return -1;
 }
@@ -115,8 +121,8 @@ void jobserver_close_(struct jobserver * js, bool keep)
 {
   if(!keep)
     {
-      close_pipe_end_(js->read);
-      close_pipe_end_(js->write);
+      close(js->read);
+      close(js->write);
     }
 
   if(js->jobs != NULL)
@@ -133,21 +139,27 @@ int jobserver_close(struct jobserver * js)
       return -1;
     }
 
-  char tokens[js->size];
-
-  if(jobserver_has_tokens(js->poll[1]) != 0)
+  if(js->size > 0)
     {
-      errno = EAGAIN;
-    }
+      switch(jobserver_has_tokens_(js->poll[1]))
+	{
+	case -1:
+	  return -1;// errno: ENOMEM
+	case 0:
+	  errno = EAGAIN;
+	  return -1;
+	}
 
-  size_t size = read(js->read, tokens, js->size);
+      char tokens[js->size];
+      size_t size = read(js->read, tokens, js->size);
 
-  jobserver_close_(js, false);
+      jobserver_close_(js, false);
 
-  if(size < js->size)
-    {
-      errno = EIDRM;
-      return -1;
+      if(size < js->size)
+	{
+	  errno = EIDRM;
+	  return -1;
+	}
     }
 
   return 0;

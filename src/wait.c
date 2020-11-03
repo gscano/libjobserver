@@ -12,7 +12,7 @@ int jobserver_wait_for_job_(struct jobserver * js, char * token, bool with_sigch
   int status;
   pid_t pid = waitpid(-1, &status, with_sigchld ? 0 : WNOHANG);
 
-  if(pid <= 0) return -1;// errno: 0, (with_sigchld ?)EINTR
+  if(pid <= 0) return -1;// errno: (0), (with_sigchld ?)EINTR
 
   struct jobserver_job * job = jobserver_find_job_(js, pid);
 

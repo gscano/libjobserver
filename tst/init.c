@@ -53,7 +53,7 @@ void test_connect()
       setenv("MAKEFLAGS", env, 1);
 
       assert(jobserver_connect(&js) == 0);
-      assert(errno == 0);
+      assert(jobserver_close(&js) == 0);
     }
 
     {
@@ -76,8 +76,18 @@ void test_connect()
       assert(errno == EBADF);
     }
 
-    assert(close(pipefd[0]) != -1);
-    assert(close(pipefd[1]) != -1);
+    {
+      struct jobserver js;
+
+      snprintf(env, 32, "--jobserver-auth=%d,%d", pipefd[0], pipefd[1]);
+      setenv("MAKEFLAGS", env, 1);
+
+      assert(close(pipefd[0]) != -1);
+      assert(close(pipefd[1]) != -1);
+
+      assert(jobserver_connect(&js) == -1);
+      assert(errno == EACCES);
+    }
   }
 
   {
@@ -101,11 +111,14 @@ void test_create()
 {
   struct jobserver js;
 
-  js.read = -1;
-  js.write = -1;
   js.dry_run = false;
   js.debug = true;
   js.keep_going = false;
+
+  {
+    assert(jobserver_create(&js, "") == 1);
+    assert(jobserver_close(&js) == 0);
+  }
 
   {
     assert(jobserver_create(&js, "abcde") == 6);
@@ -113,8 +126,9 @@ void test_create()
     char buffer[10] = {0};
     assert(read(js.read, buffer, 10) == 5);
     assert(strcmp(buffer, "abcde") == 0);
+    assert(write(js.write, buffer, 5) == 5);
 
-    jobserver_close(&js);
+    assert(jobserver_close(&js) == 0);
   }
 
   setenv("MAKEFLAGS", "", 1);
@@ -125,7 +139,8 @@ void test_create()
     char buffer[10] = {0};
     assert(read(js.read, buffer, 10) == 4);
     assert(strcmp(buffer, "aaaa") == 0);
+    assert(write(js.write, buffer, 4) == 4);
 
-    jobserver_close(&js);
+    assert(jobserver_close(&js) == 0);
   }
 }

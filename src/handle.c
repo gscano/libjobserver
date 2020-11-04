@@ -114,7 +114,7 @@ int jobserver_clear(struct jobserver * js)
     {
       struct jobserver_job * job = &js->jobs[js->current_jobs - 1];
 
-      if(kill(job->pid, SIGKILL) == -1 )
+      if(kill(job->pid, SIGKILL) == -1)
 	return js->current_jobs;
 
       if(jobserver_wait_for_job_(js, NULL, false) == -1)

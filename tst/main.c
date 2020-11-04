@@ -7,7 +7,7 @@
 
 #include "jobserver.h"
 
-#define MAX_ID_LENGTH 31
+#define MAX_ID_LENGTH 32
 #define LOCAL_ENV "JOBSERVER_TEST"
 
 struct data

@@ -1,21 +1,19 @@
 all:
-	@+echo "Error"
+	@echo "Error"
 
-called-1:
-	@+echo "called-1"
-	@./main.sh -
-	@./main.sh +
+j:
+	@./main.sh one1
+	@./main.sh two1
 
-called-2:
-	@+echo "called-2"
-	@+./main.sh %
+mtj-1:
+	@+./main.sh multi1
 
-called-3:
-	@+echo "called-3"
-	@./main.sh &
+jtm-1:
+	@./main.sh two1
+	@+./main.sh multi1
 
-call-1:
-	./main 2 ./main.sh @
+jtm-2:
+	@+./main.sh multi1
 
-call-2:
-	+./main 1 ./main.sh + - @
+mtj-jtm:
+	@+./main.sh @

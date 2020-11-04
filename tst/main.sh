@@ -3,17 +3,15 @@
 MAKE=/usr/bin/make
 
 case $1 in
-    "+") ./main 1 ./main.sh 1 1 1 1;;# + A B C D (4)
-    "-") ./main 2 ./main.sh 2 1 2 ;;# + A B C (5)
+    "one1") export JOBSERVER_TEST="single1";  ./main 0 ./main.sh 1 2 1 2 ;;
+    "two1") export JOBSERVER_TEST="two1";     ./main 1 ./main.sh 1 2 1 2 1 2 ;;
+    "multi1") export JOBSERVER_TEST="multi1"; ./main ! ./main.sh 1 2 1 2 1 2 1 2;;
 
-    "@") ./main ! ./main.sh 1 2 1 2 ;;# + A B C D (6)
-    "%") ./main ! ./main.sh £ 2 ;;# + AAA AAB AAC AAD ABA ABB ABC ABD AC B (16)
-    "£") ./main ! ./main.sh @ @ 2 ;;# + AA AB AC AD BA BB BC BD C (14)
+    "%") export JOBSERVER_TEST="%"; ./main 2 $MAKE '-f main.mk jtm-1' ;;
+    "@") export JOBSERVER_TEST="@"; ./main ! $MAKE '-f main.mk jtm-1' '-f main.mk jtm-2' ;;
 
-    "&") ./main ! $MAKE '-f main.mk called-1' '-f main.mk called-2' ;;
-    "=") $MAKE called-2 ;;
-    "/") $MAKE call-1 ;;
+    [0-9])  echo "$JOBSERVER_TEST"
+	    sleep $1 ;;
 
-    *)  echo -n " $JOBSERVER_TEST " >> main.txt
-	sleep $1 ;;
+    *) echo "Error" ;;
 esac

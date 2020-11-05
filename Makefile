@@ -13,7 +13,7 @@ MAN_DESTDIR?=$(DESTDIR)/share/man
 
 MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 
-.PHONY: all check run-check clean distclean dist install uninstall
+.PHONY: all check run-check example clean distclean dist install uninstall
 
 NAME=libjobserver
 
@@ -50,6 +50,7 @@ CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
 check: $(CHECK_OBJ:%.o=%.ok) run-check
 
 run-check: $(BUILDIR)/tst/main
+	$(MAKE) -C ./tst -f test.mk
 
 -include $(CHECK_OBJ:%.o=%.d)
 
@@ -69,7 +70,7 @@ $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$< > $<.ko 2>&1
 	$(if $$? 0, mv -f -u $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
-exp: exp/example
+example: exp/example
 
 -include $(BUILDIR)/exp/example.d
 

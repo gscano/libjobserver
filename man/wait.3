@@ -24,7 +24,7 @@ The
 function calls
 .BR jobserver_wait ()
 repeatedly and as many times as necessary to collect all remaining jobs
-of the jobserver \fIjs\fP as long as each call to
+of jobserver \fIjs\fP as long as each call to
 .BR jobserver_wait (),
 waiting at most \fItimeout\fP, reduces the number of jobs
 by at least one.
@@ -35,7 +35,7 @@ The \fItimeout\fP argument should respect the convention described in
 When a job is terminated, the \fBjobserver_callback_return_t\fP callback
 is called (see \fBjobserver_launch_job\fP(3)).
 
-For information about how the termination of a jobserver independent
+For information on how the termination of a jobserver independent
 process should be handled see section \fBHandling forks\fP in
 \fBjobserver\fP(7).
 

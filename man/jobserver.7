@@ -2,7 +2,7 @@
 
 .SH NAME
 
-Jobserver - A set of functions to integrate a jobserver in a build automation
+Jobserver - A set of functions to handle parallel jobs in a build automation
 application compatible with
 .UR https://www.gnu.org/software/make/
 GNU Make
@@ -17,8 +17,8 @@ and more specifically by a build automation software.
 The first process initiates the jobserver with a maximum
 number of parallel job tokens. To spawn a new child, the
 jobserver locks an unused token if any is available. Otherwise,
-it has to wait for one of its children to exit in order
-to recycle the associated token. A child process will
+it has to wait for one of its children or sibling to exit in
+order to reuse the associated token. A child process will
 search the environment to access the jobserver and try to
 lock a token whenever it has to spawn a child, effectively
 sharing the ability to do so with its siblings and parents.
@@ -59,9 +59,9 @@ sharing the ability to do so with its siblings and parents.
 
 .SS Configuration
 
-A jobserver, either created or joined, can have 3
-properties related to the actions that should be
-undertaken. Depending on the status of each flag, a
+A jobserver, either created or joined, has 3
+properties related to the actions that it
+performs. Depending on the status of each flag, a
 program using the jobserver:
 .IP
 * shall stop immediately when marked \fIdry_run\fP;
@@ -77,11 +77,11 @@ Creating or connecting to a jobserver installs a signal handler for
 \fBjobserver_callback_return_t\fP callback and release the token
 associated with the job.
 
-Suppose the application using the jobserver spawned children without
-calling \fBjobserver_launch_job\fP(3).
+Suppose that the application using the jobserver spawned children without
+calling \fBjobserver_launch_job\fP(3):
 
 .IP
-* If \fBSIGCHLD\fP is received while in a blocking function
+* If \fBSIGCHLD\fP is received while in a potentially blocking function
 such as \fBjobserver_launch_job\fP(3) or \fBjobserver_wait\fP(3)
 the terminated process might not be a job. In this case,
 \fB-1\fP is returned, \fIerrno\fP is set to \fBECHILD\fP, and
@@ -91,8 +91,8 @@ process (as per \fBwaitpid\fP(2)).
 
 .IP
 * If the application waited for a child to exit (see \fBwait\fP(2)),
-the waited process could be a jobserver job. In this case,
-\fBjobserver_terminate_job\fP(3) \fImust be called\fP. Failure
+the waited process could be a job. In this case,
+\fBjobserver_terminate_job\fP(3) \fBmust be called\fP. Failure
 to do so will cause the \fBjobserver_wait\fP(3) or
 \fBjobserver_collect\fP(3) functions to \fBnever\fP return \fB0\fP.
 
@@ -152,6 +152,123 @@ of the
 .UR https://www.gnu.org/software/make/
 GNU Make documentation
 .UE .
+
+.SH EXAMPLE
+
+The following program runs \fBexecv\fP(3) on each of its argument using a
+jobserver which size is given as its first argument:
+
+.EX
+a.out 2 '/usr/bin/date --iso-8601' '/usr/bin/hostname -i' /usr/bin/whoami
+a.out ! '/usr/bin/make --version' '/usr/bin/sleep 2'
+.EE
+
+When '!' is given, it expects the jobserver to be preexisting (usually created
+by \fBmake\fP(1)).
+
+.EX
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#include "jobserver.h"
+
+int run(void * data_)// Not empty
+{
+  fprintf(stderr, "Launching job '%s'.\\n", (char *)data_);
+
+  int size = 1;
+
+  char * data = data_;
+  while((data = strchr(data, ' ')) != NULL)
+    {
+      ++size;
+      ++data;
+    }
+
+  char ** args = alloca(size * sizeof(char *));
+
+  args[0] = strtok(data_, " ");
+  args[size] = NULL;
+
+  size = 1;
+  while((data = strtok(NULL, " ")) != NULL)
+    args[size++] = data;
+
+  int status = execv(args[0], args);
+
+  if(status != 0) fprintf(stderr, "Execv failed: %m.\\n");
+
+  return status;
+}
+
+void end(void * data, int status)
+{
+  fprintf(stderr, "Job '%s' collected with status: %d.\\n", (char *)data, status);
+}
+
+void connect_to(struct jobserver * js, char * tokens)
+{
+  fprintf(stderr, "Connecting to jobserver ...");
+
+  if(jobserver_connect(js) == -1)
+    {
+      fprintf(stderr, " no jobserver found");
+
+      if(*tokens == '!')
+	{
+	  if(errno == EACCES)
+	    fprintf(stderr, " recursive make invocation without '+'");
+
+	  fprintf(stderr, " and '!' was specified.\\n");
+	  exit(EXIT_FAILURE);
+	}
+      else if(errno == ENODEV)
+	{
+	  fprintf(stderr, ".\\nCreating jobserver ...");
+
+	  if(jobserver_create_n(js, atoi(tokens), 't') == -1)
+	    exit(EXIT_FAILURE);
+
+	  fprintf(stderr, " done.\\n");
+	}
+      else
+	{
+	  fprintf(stderr, ", error (%m).\\n");
+	  exit(EXIT_FAILURE);
+	}
+    }
+}
+
+//Usage: tokens [cmds ...]
+int main(int argc, char ** argv)
+{
+  const int shift = 2;
+
+  if(argc < shift)
+    return EXIT_FAILURE;
+
+  struct jobserver js;
+  connect_to(&js, argv[1]);
+
+  for(int i = shift; i < argc; ++i)
+    if(strlen(argv[i]) > 0)
+      if(jobserver_launch_job(&js, -1, true, argv[i], run, end) == -1)
+	return EXIT_FAILURE;
+
+  int status;
+  while((status = jobserver_collect(&js, -1)) != 0)
+    if(status == -1 && errno != EINTR)
+      return EXIT_FAILURE;
+
+  if(jobserver_close(&js) != 0)
+    return EXIT_FAILURE;
+
+  return EXIT_SUCCESS;
+}
+.EE
 
 .SH SEE ALSO
 

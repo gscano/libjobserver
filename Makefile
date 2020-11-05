@@ -1,15 +1,17 @@
-MAKEFLAGS=--no-builtin-rules --no-builtin-variables
+VERSION ?= X.Y.Z
+CFLAGS ?= -W -Wall -Werror -Wextra -g -O0 # -DUSE_SIGNALFD
+T_CFLAGS ?= #-DNDEBUG -flto
+BUILDIR ?= .
+prefix ?= /usr
 
--include config.mk
-VERSION?=X.X.X
-CC?=gcc
-CFLAGS?=-W -Wall -Werror -Wextra -g -O0 # -DUSE_SIGNALFD
-T_CFLAGS?= #-DNDEBUG
-BUILDIR?=.
-DESTDIR?=/usr
-HDR_DESTDIR?=$(DESTDIR)/include
-LIB_DESTDIR?=$(DESTDIR)/lib
-MAN_DESTDIR?=$(DESTDIR)/share/man
+datarootdir = $(prefix)/share
+includedir = $(prefix)/include
+libdir = $(prefix)/lib
+mandir = $(datarootdir)/man
+man3dir = $(mandir)/man3
+man7dir = $(mandir)/man7
+
+#-include config.mk
 
 MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 
@@ -33,13 +35,13 @@ $(BUILDIR)/$(NAME)-$(VERSION).a: $(OBJ)
 	ranlib $@
 
 $(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
-	$(CC) -shared -Wl,-soname,$@ -o $@ $^
+	$(CC) -shared $(LDFLAGS) -o $@ $^
 
 -include $(OBJ:%.o=%.d)
 
 $(BUILDIR)/src/%.o: src/%.c
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC -flto $(CFLAGS) $(T_CFLAGS) -MMD -o $@ $<
+	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -MMD -o $@ $<
 
 CHECK=env init handle
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
@@ -47,10 +49,10 @@ CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
 .PRECIOUS: $(CHECK_OBJ)
 .PRECIOUS: $(addprefix $(BUILDIR)/tst/, $(CHECK))
 
-check: $(CHECK_OBJ:%.o=%.ok) run-check
+check: $(CHECK_OBJ:%.o=%.ok)
 
 run-check: $(BUILDIR)/tst/main
-	$(MAKE) -C ./tst -f test.mk
+	$(MAKE) -j 1 -C ./tst -f test.mk
 
 -include $(CHECK_OBJ:%.o=%.d)
 
@@ -64,11 +66,11 @@ $(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/$(NAME).a
 
 $(BUILDIR)/tst/main-so: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -L $(BUILDIR) -o $@ $< -ljobserver
+	$(CC) $(CFLAGS) $(LDFLAGS) -L $(BUILDIR) -o $@ $< -ljobserver
 
 $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$< > $<.ko 2>&1
-	$(if $$? 0, mv -f -u $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
+	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
 example: exp/example
 
@@ -104,36 +106,36 @@ dist: $(DISTFILES)
 	tar czfv $(NAME)-0.1.0.tar.gz $(NAME)-$(VERSION)
 	rm -r $(NAME)-$(VERSION)
 
-INSTALL=$(HDR_DESTDIR)/jobserver.h
-INSTALL+=$(LIB_DESTDIR)/$(NAME)-$(VERSION).a $(LIB_DESTDIR)/$(NAME)-$(VERSION).so
-INSTALL+=$(LIB_DESTDIR)/$(NAME).a $(LIB_DESTDIR)/$(NAME).so
-INSTALL+=$(addprefix $(MAN_DESTDIR)/man3/jobserver__, $(addsuffix .gz, $(shell ./man/script.sh echo | cut -d' ' -f1)))
-INSTALL+=$(MAN_DESTDIR)/man7/jobserver.7.gz
+INSTALL=$(includedir)/jobserver.h
+INSTALL+=$(libdir)/$(NAME)-$(VERSION).a $(libdir)/$(NAME)-$(VERSION).so
+INSTALL+=$(libdir)/$(NAME).a $(libdir)/$(NAME).so
+INSTALL+=$(addprefix $(man3dir)/jobserver__, $(addsuffix .gz, $(shell ./man/script.sh echo | cut -d' ' -f1)))
+INSTALL+=$(man7dir)/jobserver.7.gz
 install: $(INSTALL) man/script.sh
-	./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(MAN_DESTDIR)/man3/"$$2".gz"}' | xargs -I $$ bash -c "ln -sf $$"
+	./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(man3dir)/"$$2".gz"}' | xargs -I $$ bash -c "ln -sf $$"
 
-$(HDR_DESTDIR)/jobserver.h: src/jobserver.h
+$(includedir)/jobserver.h: src/jobserver.h
 	@mkdir -p $(dir $@)
 	cp $< $@
 
-$(LIB_DESTDIR)/$(NAME).%: $(LIB_DESTDIR)/$(NAME)-$(VERSION).%
+$(libdir)/$(NAME).%: $(libdir)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
 	ln -sf $(notdir $<) $@
 
-$(LIB_DESTDIR)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
+$(libdir)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
 	cp $< $@
 
-$(MAN_DESTDIR)/man3/jobserver__%.3.gz: man/%.3
+$(man3dir)/jobserver__%.3.gz: man/%.3
 	@mkdir -p $(dir $@)
 	@cp $< $@
 	gzip --quiet $@
 
-$(MAN_DESTDIR)/man7/jobserver.7.gz: man/jobserver.7
+$(man7dir)/jobserver.7.gz: man/jobserver.7
 	@mkdir -p $(dir $@)
 	@cp $< $@
 	gzip --quiet $@
 
 uninstall:
 	rm -f $(INSTALL)
-	./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(MAN_DESTDIR)/man3/"$$2".gz"}' | xargs -I $$ bash -c "rm -f $$"
+	./man/script.sh echo | awk '{print "jobserver__"$$1".gz $(man3dir)/"$$2".gz"}' | xargs -I $$ bash -c "rm -f $$"

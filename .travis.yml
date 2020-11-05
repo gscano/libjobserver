@@ -1,0 +1,42 @@
+language: c
+
+dist: bionic
+
+os:
+  - linux
+  - osx
+
+compiler:
+  - gcc
+  - clang
+
+env:
+  global: CFLAGS="-W -Wall -Werror -Wextra"
+  jobs:
+    - T_CFLAGS=
+    - T_CFLAGS="-DNDEBUG"
+    - T_CFLAGS="-DUSE_SIGNALFD"
+    - T_CFLAGS="-DUSE_SIGNALFD -DNDEBUG"
+
+jobs:
+  exclude:
+    - os: osx
+      compiler: gcc
+    - os: osx
+      env: T_CFLAGS="-DUSE_SIGNALFD"
+    - os: osx
+      env: T_CFLAGS="-DUSE_SIGNALFD -DNDEBUG"
+
+script:
+  - make
+  - make example
+  - make check
+  - make run-check
+  - make dist
+  - make install prefix=dest
+
+after_failure:
+  less $(find . -type f -name *.ko)
+
+notifications:
+  email: false

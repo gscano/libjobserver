@@ -10,6 +10,8 @@ tst/main
 
 tst/*.ok
 
+exp/example
+
 man/jobserver_*.3
 
 *~

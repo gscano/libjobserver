@@ -69,6 +69,18 @@ $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$< > $<.ko 2>&1
 	$(if $$? 0, mv -f -u $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
+exp: exp/example
+
+-include $(BUILDIR)/exp/example.d
+
+$(BUILDIR)/exp/example: $(BUILDIR)/exp/example.o $(BUILDIR)/$(NAME).a
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -o $@ $^
+
+$(BUILDIR)/exp/example.o: exp/example.c
+	@mkdir -p $(dir $@)
+	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
+
 clean:
 	rm -f $(addprefix $(BUILDIR)/, $(NAME).a $(NAME).so)
 	rm -f $(addprefix $(BUILDIR)/, $(NAME)-$(VERSION).a $(NAME)-$(VERSION).so)
@@ -82,7 +94,8 @@ distclean: clean
 
 DISTFILES=Makefile LICENSE
 DISTFILES+=$(wildcard src/*.c) $(wildcard src/*.h)
-DISTFILES+=$(wildcard tst/*.c) tst/main.sh
+DISTFILES+=$(wildcard tst/*.c) tst/main.sh tst/main.mk tst/test.mk
+DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)
 	$(foreach file, $^, $(shell mkdir -p $(dir $(NAME)-$(VERSION)/$(file))))

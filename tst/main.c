@@ -68,6 +68,8 @@ void end(void * data_, int status)
   fprintf(stdout, "Job %s '%s  %s' collected with status: %d\n",
 	  data->id, data->exe, data->arg, WEXITSTATUS(status));
   fflush(stdout);
+
+  assert(status == 0);
 }
 
 void connect_to(struct jobserver * js, char * arg)
@@ -98,14 +100,22 @@ void connect_to(struct jobserver * js, char * arg)
 
       if(*tokens == '!')
 	{
-	  fprintf(stderr, ", and '!' was specified.\n");
+	  if(errno == EACCES)
+	    fprintf(stderr, " recursive make invocation without '+'");
+
+	  fprintf(stderr, " and '!' was specified.\n");
 	  exit(EXIT_FAILURE);
+	}
+      else if(errno == ENODEV || errno == EACCES)
+	{
+	  fprintf(stderr, ".\nCreating jobserver ...");
+	  const int number = jobserver_create(js, tokens);
+	  assert(number == size + 1);
 	}
       else
 	{
-	  fprintf(stderr, ".\nCreating jobserver ...");
-	  int number = jobserver_create(js, tokens);
-	  assert(number == size + 1);
+	  fprintf(stderr, ", error (%m).\n");
+	  exit(EXIT_FAILURE);
 	}
     }
 

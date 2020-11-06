@@ -157,6 +157,8 @@ void prepare_jobs(struct data * jobs, size_t size, char * exe, char ** args)
 // [.]: argument for each child
 int main(int argc, char ** argv)
 {
+  fprintf(stderr, "MAKEFLAGS: %s\n", getenv("MAKEFLAGS"));
+
   const int shift = 3;
 
   if(argc < shift)
@@ -173,20 +175,7 @@ int main(int argc, char ** argv)
   prepare_jobs(jobs, argc - shift, argv[2], argv + shift);
 
   for(int i = 0; i < argc - shift; ++i)
-    {
-#if 0
-      int status;
-      while((status = jobserver_launch_job(&js, -1, true, &jobs[i], test, end)) != 0)
-	{
-	  fprintf(stderr, "Error: %d %m (stopped: %d)\n", status, js.stopped);
-	  jobserver_print(stderr, &js, ", ", ",", "\n");
-	  fprintf(stderr, "\n");
-	  assert(errno == ECHILD);
-	}
-#else
-      assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
-#endif
-    }
+    assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
 
  collect:;
 

@@ -26,6 +26,10 @@ jobs:
       env: T_CFLAGS="-DUSE_SIGNALFD"
     - os: osx
       env: T_CFLAGS="-DUSE_SIGNALFD -DNDEBUG"
+  include:
+    - os: osx
+      script:
+        - make
 
 script:
   - make

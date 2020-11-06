@@ -43,16 +43,13 @@ $(BUILDIR)/src/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -MMD -o $@ $<
 
-CHECK=env init handle
+CHECK=env init handle main
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
 
 .PRECIOUS: $(CHECK_OBJ)
 .PRECIOUS: $(addprefix $(BUILDIR)/tst/, $(CHECK))
 
 check: $(CHECK_OBJ:%.o=%.ok)
-
-run-check: $(BUILDIR)/tst/main
-	$(MAKE) -j 1 -C ./tst -f test.mk
 
 -include $(CHECK_OBJ:%.o=%.d)
 
@@ -71,6 +68,9 @@ $(BUILDIR)/tst/main-so: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
 $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$< > $<.ko 2>&1
 	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
+
+$(BUILDIR)/tst/main.ok: $(BUILDIR)/tst/main
+	$(MAKE) --no-print-directory -j 1 -C ./tst -f main.mk test #2>$<.ko 1>$<.ok
 
 example: exp/example
 
@@ -97,7 +97,7 @@ distclean: clean
 
 DISTFILES=Makefile LICENSE
 DISTFILES+=$(wildcard src/*.c) $(wildcard src/*.h)
-DISTFILES+=$(wildcard tst/*.c) tst/main.sh tst/main.mk tst/test.mk
+DISTFILES+=$(wildcard tst/*.c) tst/main.sh tst/main.mk
 DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)

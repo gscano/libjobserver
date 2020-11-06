@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo $MAKEFLAGS
-
 case $1 in
     "one")   export JOBSERVER_TEST+="one";   ./main 0 ./main.sh 1 2 1 2 ;;
     "two")   export JOBSERVER_TEST+="two";   ./main 1 ./main.sh 1 2 1 2 1 2 ;;

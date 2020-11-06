@@ -39,9 +39,16 @@ $(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
 
 -include $(OBJ:%.o=%.d)
 
-$(BUILDIR)/src/%.o: src/%.c
+$(BUILDIR)/src/%.o: src/%.c $(BUILDIR)/src/config.h
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -MMD -o $@ $<
+	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -I $(BUILDIR)/src -MMD -o $@ $<
+
+$(BUILDIR)/src/config.h: src/config.h.in
+	@mkdir -p $(dir $@)
+	$(if $(shell $(MAKE) -j 2 detect-makeflags--jobserver-), echo '#define MAKEFLAGS_JOBSERVER "--jobserver-$(shell $(MAKE) -j 2 detect-makeflags--jobserver-)"' | cat $< - > $@, $(error "Cannot detect MAKEFLAGS's '--jobserver-' section!"))
+
+detect-makeflags--jobserver-:
+	@echo "$$MAKEFLAGS" | grep -- '--jobserver-' | sed 's/.*--jobserver-\([a-z]*\)=.*/\1/g'
 
 CHECK=env init handle main
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
@@ -53,9 +60,9 @@ check: $(CHECK_OBJ:%.o=%.ok)
 
 -include $(CHECK_OBJ:%.o=%.d)
 
-$(BUILDIR)/tst/%.o: tst/%.c
+$(BUILDIR)/tst/%.o: tst/%.c $(BUILDIR)/src/config.h
 	@mkdir -p $(dir $@)
-	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
+	$(CC) -c $(CFLAGS) -I src -I $(BUILDIR)/src -MMD -o $@ $<
 
 $(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/$(NAME).a
 	@mkdir -p $(dir $@)
@@ -85,6 +92,7 @@ $(BUILDIR)/exp/example.o: exp/example.c
 	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
 
 clean:
+	rm -f $(addprefix $(BUILDIR)/, src/config.h)
 	rm -f $(addprefix $(BUILDIR)/, $(NAME).a $(NAME).so)
 	rm -f $(addprefix $(BUILDIR)/, $(NAME)-$(VERSION).a $(NAME)-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
@@ -102,7 +110,7 @@ DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)
 	$(foreach file, $^, $(shell mkdir -p $(dir $(NAME)-$(VERSION)/$(file))))
-	$(foreach file, $^, $(shell cp $(file) $(NAME)-$(VERSION)/$(file)))
+	$(foreach file, $^, $(shell install $(file) $(NAME)-$(VERSION)/$(file)))
 	tar czfv $(NAME)-0.1.0.tar.gz $(NAME)-$(VERSION)
 	rm -r $(NAME)-$(VERSION)
 
@@ -116,7 +124,7 @@ install: $(INSTALL) man/script.sh
 
 $(includedir)/jobserver.h: src/jobserver.h
 	@mkdir -p $(dir $@)
-	cp $< $@
+	install $< $@
 
 $(libdir)/$(NAME).%: $(libdir)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
@@ -124,16 +132,16 @@ $(libdir)/$(NAME).%: $(libdir)/$(NAME)-$(VERSION).%
 
 $(libdir)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
-	cp $< $@
+	install $< $@
 
 $(man3dir)/jobserver__%.3.gz: man/%.3
 	@mkdir -p $(dir $@)
-	@cp $< $@
+	@install $< $@
 	gzip --quiet $@
 
 $(man7dir)/jobserver.7.gz: man/jobserver.7
 	@mkdir -p $(dir $@)
-	@cp $< $@
+	@install $< $@
 	gzip --quiet $@
 
 uninstall:

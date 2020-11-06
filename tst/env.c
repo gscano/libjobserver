@@ -1,4 +1,5 @@
 #include "jobserver.h"
+#include "config.h"
 
 #include <assert.h> // assert()
 #include <stdbool.h> // bool
@@ -69,42 +70,42 @@ int main()
   read(2, "", -1, -1, false, 0);
   read(3, "n", -1, -1, true, 0);
   read(4, "eik", -1, -1, false, 0);
-  read(5, "-j4 --jobserver-auth=3,4", 3, 4, false, 0);
-  read(6, "n -j2 --jobserver-auth=3,4", 3, 4, true, 0);
+  read(5, "-j4 "MAKEFLAGS_JOBSERVER"=3,4", 3, 4, false, 0);
+  read(6, "n -j2 "MAKEFLAGS_JOBSERVER"=3,4", 3, 4, true, 0);
   read(7, "--jobserv", -1, -1, false, 0);
-  read(8, "--jobserver-auth3,4", -1, -1, false, -1);
-  read(9, "--jobserver-auth=", -1, -1, false, -1);
-  read(10, "--jobserver-auth=3", -1, -1, false, -1);
-  read(11, "--jobserver-auth=34", -1, -1, false, -1);
-  read(12, "--jobserver-auth=3,", -1, -1, false, -1);
-  read(13, "--jobserver-auth=3,4dz", 3, 4, false, 0);
-  read(14, "--jobserver-auth=3,4 n", 3, 4, false, 0);
-  read(15, "--jobserver-auth=b,4", -1, -1, false, -1);
-  read(16, "--jobserver-auth=3,f", -1, -1, false, -1);
+  read(8, ""MAKEFLAGS_JOBSERVER"3,4", -1, -1, false, -1);
+  read(9, ""MAKEFLAGS_JOBSERVER"=", -1, -1, false, -1);
+  read(10, ""MAKEFLAGS_JOBSERVER"=3", -1, -1, false, -1);
+  read(11, ""MAKEFLAGS_JOBSERVER"=34", -1, -1, false, -1);
+  read(12, ""MAKEFLAGS_JOBSERVER"=3,", -1, -1, false, -1);
+  read(13, ""MAKEFLAGS_JOBSERVER"=3,4dz", 3, 4, false, 0);
+  read(14, ""MAKEFLAGS_JOBSERVER"=3,4 n", 3, 4, false, 0);
+  read(15, ""MAKEFLAGS_JOBSERVER"=b,4", -1, -1, false, -1);
+  read(16, ""MAKEFLAGS_JOBSERVER"=3,f", -1, -1, false, -1);
   read(17, "n --warn-undefined-variables", -1, -1, true, 0);
   read(18, "--warn-undefined-variables", -1, -1, false, 0);
-  read(19, "n --jobserver-auth=-2,4", -1, -1, true, -1);
+  read(19, "n "MAKEFLAGS_JOBSERVER"=-2,4", -1, -1, true, -1);
 
-  write(1, NULL, 3, 4, false, false, false, "--jobserver-auth=3,4");
-  write(2, NULL, 3, 4, true, false, false, "n --jobserver-auth=3,4");
-  write(3, NULL, 3, 4, false, true, true, "dk --jobserver-auth=3,4");
-  write(4, "", 3, 4, true, false, false, "n --jobserver-auth=3,4");
-  write(5, "", 3, 4, false, false, false, "--jobserver-auth=3,4");
-  write(6, "d", 3, 4, false, false, false, "d --jobserver-auth=3,4");
-  write(7, "d", 3, 4, true, false, false, "dn --jobserver-auth=3,4");
-  write(8, "ni", 3, 4, false, false, false, "ni --jobserver-auth=3,4");
-  write(9, "ni", 3, 4, true, false, true, "nik --jobserver-auth=3,4");
-  write(10, "-- NAME=VALUE", 3, 4, false, false, false, "--jobserver-auth=3,4 -- NAME=VALUE");
-  write(11, "-- NAME=VALUE", 3, 4, false, true, true, "dk --jobserver-auth=3,4 -- NAME=VALUE");
-  write(12, "in -- NAME=VALUE", 3, 4, false, true, false, "ind --jobserver-auth=3,4 -- NAME=VALUE");
+  write(1, NULL, 3, 4, false, false, false, ""MAKEFLAGS_JOBSERVER"=3,4");
+  write(2, NULL, 3, 4, true, false, false, "n "MAKEFLAGS_JOBSERVER"=3,4");
+  write(3, NULL, 3, 4, false, true, true, "dk "MAKEFLAGS_JOBSERVER"=3,4");
+  write(4, "", 3, 4, true, false, false, "n "MAKEFLAGS_JOBSERVER"=3,4");
+  write(5, "", 3, 4, false, false, false, ""MAKEFLAGS_JOBSERVER"=3,4");
+  write(6, "d", 3, 4, false, false, false, "d "MAKEFLAGS_JOBSERVER"=3,4");
+  write(7, "d", 3, 4, true, false, false, "dn "MAKEFLAGS_JOBSERVER"=3,4");
+  write(8, "ni", 3, 4, false, false, false, "ni "MAKEFLAGS_JOBSERVER"=3,4");
+  write(9, "ni", 3, 4, true, false, true, "nik "MAKEFLAGS_JOBSERVER"=3,4");
+  write(10, "-- NAME=VALUE", 3, 4, false, false, false, ""MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
+  write(11, "-- NAME=VALUE", 3, 4, false, true, true, "dk "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
+  write(12, "in -- NAME=VALUE", 3, 4, false, true, false, "ind "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
   write(13, "i --long-option -- NAME=VALUE", 3, 4, true, true, true,
-	"indk --jobserver-auth=3,4 --long-option -- NAME=VALUE");
-  write(14, "i --long-option -j4 --jobserver-auth=1,2 -- NAME=VALUE", 3, 4, true, true, true,
-	"indk --long-option --jobserver-auth=3,4 -- NAME=VALUE");
+	"indk "MAKEFLAGS_JOBSERVER"=3,4 --long-option -- NAME=VALUE");
+  write(14, "i --long-option -j4 "MAKEFLAGS_JOBSERVER"=1,2 -- NAME=VALUE", 3, 4, true, true, true,
+	"indk --long-option "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
   write(15, "i", -1, -1, false, true, true, "idk");
-  write(16, "-j4 --jobserver-auth=1,2", -1, -1, false, false, false, "");
-  write(17, "-j4 --jobserver-auth=1,2", 3, 4, false, false, false, "--jobserver-auth=3,4");
-  write(18, "i -j4 --jobserver-auth=1,2", 3, 4, false, true, false, "id --jobserver-auth=3,4");
+  write(16, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", -1, -1, false, false, false, "");
+  write(17, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", 3, 4, false, false, false, ""MAKEFLAGS_JOBSERVER"=3,4");
+  write(18, "i -j4 "MAKEFLAGS_JOBSERVER"=1,2", 3, 4, false, true, false, "id "MAKEFLAGS_JOBSERVER"=3,4");
   write(19, "i -j1 --long-option -- NAME=VALUE", -1, -1, false, false, false,
 	"i -j1 --long-option -- NAME=VALUE");
 

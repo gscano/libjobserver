@@ -1,6 +1,7 @@
 #include <sys/types.h> // pid_t, sigset_t
 
 #include "jobserver.h"
+#include "config.h"
 
 struct jobserver_job
 {
@@ -9,11 +10,6 @@ struct jobserver_job
   jobserver_callback_return_t done;
   void * data;
 };
-
-#define JOBSERVER_FREE_TOKEN (char)0
-
-#define JOBSERVER_SIZE_GEOME_PROG 2
-#define JOBSERVER_SIZE_ARITH_PROG 8
 
 // internal.c
 extern ssize_t read_from_pipe_(int fd, char * token);

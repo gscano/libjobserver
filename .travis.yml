@@ -32,14 +32,15 @@ jobs:
         - make
 
 script:
+  - make src/config.h
   - make
   - make example
   - make check
-  - make run-check
   - make dist
   - make install prefix=dest
 
 after_failure:
+  less src/config.h
   less $(find . -type f -name *.ko)
 
 notifications:

@@ -105,7 +105,7 @@ distclean: clean
 
 DISTFILES=Makefile LICENSE
 DISTFILES+=$(wildcard src/*.c) $(wildcard src/*.h)
-DISTFILES+=$(wildcard tst/*.c) tst/main.sh tst/main.mk
+DISTFILES+=$(wildcard tst/*.c) tst/main.mk
 DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)

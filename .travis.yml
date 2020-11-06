@@ -1,6 +1,6 @@
 language: c
 
-dist: bionic
+dist: focal
 
 os:
   - linux
@@ -32,6 +32,7 @@ jobs:
         - make
 
 script:
+  - make --version
   - make src/config.h
   - make
   - make example

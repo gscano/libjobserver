@@ -11,4 +11,4 @@
 #endif
 
 #define MAKEFLAGS "MAKEFLAGS"
-//#define MAKEFLAGS_JOBSERVER "--jobserver-..."
+#define MAKEFLAGS_JOBSERVER "--jobserver-auth"

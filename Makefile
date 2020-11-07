@@ -15,7 +15,7 @@ man7dir = $(mandir)/man7
 
 MAKEFLAGS=--no-builtin-rules --no-builtin-variables
 
-.PHONY: all check run-check example clean distclean dist install uninstall
+.PHONY: all check example clean distclean dist install uninstall
 
 NAME=libjobserver
 
@@ -45,10 +45,7 @@ $(BUILDIR)/src/%.o: src/%.c $(BUILDIR)/src/config.h
 
 $(BUILDIR)/src/config.h: src/config.h.in
 	@mkdir -p $(dir $@)
-	$(if $(shell $(MAKE) -j 2 detect-makeflags--jobserver-), echo '#define MAKEFLAGS_JOBSERVER "--jobserver-$(shell $(MAKE) -j 2 detect-makeflags--jobserver-)"' | cat $< - > $@, $(error "Cannot detect MAKEFLAGS's '--jobserver-' section!"))
-
-detect-makeflags--jobserver-:
-	@echo "$$MAKEFLAGS" | grep -- '--jobserver-' | sed 's/.*--jobserver-\([a-z]*\)=.*/\1/g'
+	@cp $< $@
 
 CHECK=env init handle main
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))

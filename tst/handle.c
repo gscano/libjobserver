@@ -58,7 +58,7 @@ int main()
     assert(jobserver_wait_for_job_(&js, &token, false) == -1);
     assert(jobserver_close(&js) == -1);
     assert(read(pipefd[0], &token, 1) == 1);
-    sleep(1);
+    sleep(2);
     assert(jobserver_wait_for_job_(&js, &token, false) == 0);
     assert(token == JOBSERVER_FREE_TOKEN);
     assert(jobserver_close(&js) == 0);
@@ -71,7 +71,7 @@ int main()
     assert(jobserver_launch_job(&js, 0, true, &data1, begin, end) == 0);
     assert(jobserver_launch_job(&js, 0, true, &data2, begin, end) == 0);
     assert(read(pipefd[0], &token, 1) == 1);
-    sleep(1);
+    sleep(2);
     assert(jobserver_wait_for_job_(&js, &token, false) == 0);
     assert(token == JOBSERVER_FREE_TOKEN);
     sleep(3);
@@ -84,7 +84,7 @@ int main()
     struct data data1 = {4, 1, 1};
     assert(jobserver_create(&js, "") == 1);
     assert(jobserver_launch_job(&js, 0, true, &data1, begin, end) == 0);
-    sleep(2);
+    sleep(3);
     assert(read(pipefd[0], &token, 1) == 1);
     assert(jobserver_wait_for_job_(&js, &token, false) == 0);
     assert(token == JOBSERVER_FREE_TOKEN);

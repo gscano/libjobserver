@@ -148,10 +148,16 @@ corresponding to the read and write sides of the token pipe.
 .UR https://www.gnu.org/software/make/manual/html_node/Job-Slots.html#Job-Slots
 Section 13.1
 .UE
-of the
+of
 .UR https://www.gnu.org/software/make/
-GNU Make documentation
-.UE .
+GNU Make
+.UE
+version >= 4.2.
+
+.SH NOTES
+
+For versions before version 4.2, the jobserver will always run one job at a time
+when called by GNU Make.
 
 .SH EXAMPLE
 

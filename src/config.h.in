@@ -1,0 +1,14 @@
+#ifndef JOBSERVER_FREE_TOKEN
+#define JOBSERVER_FREE_TOKEN (char)0
+#endif
+
+#ifndef JOBSERVER_SIZE_GEOME_PROG
+#define JOBSERVER_SIZE_GEOME_PROG 2
+#endif
+
+#ifndef JOBSERVER_SIZE_ARITH_PROG
+#define JOBSERVER_SIZE_ARITH_PROG 8
+#endif
+
+#define MAKEFLAGS "MAKEFLAGS"
+#define MAKEFLAGS_JOBSERVER "--jobserver-auth"

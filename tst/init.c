@@ -1,4 +1,5 @@
 #include "jobserver.h"
+#include "config.h"
 
 #include <assert.h> // assert()
 #include <errno.h> // errno
@@ -49,7 +50,7 @@ void test_connect()
     {
       struct jobserver js;
 
-      snprintf(env, 32, "--jobserver-auth=%d,%d", pipefd[0], pipefd[1]);
+      snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], pipefd[1]);
       setenv("MAKEFLAGS", env, 1);
 
       assert(jobserver_connect(&js) == 0);
@@ -59,7 +60,7 @@ void test_connect()
     {
       struct jobserver js;
 
-      snprintf(env, 32, "--jobserver-auth=%d,%d", pipefd[0], -1);
+      snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], -1);
       setenv("MAKEFLAGS", env, 1);
 
       assert(jobserver_connect(&js) == -1);
@@ -69,7 +70,7 @@ void test_connect()
     {
       struct jobserver js;
 
-      snprintf(env, 32, "--jobserver-auth=%d,%d", -1, pipefd[1]);
+      snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", -1, pipefd[1]);
       setenv("MAKEFLAGS", env, 1);
 
       assert(jobserver_connect(&js) == -1);
@@ -79,7 +80,7 @@ void test_connect()
     {
       struct jobserver js;
 
-      snprintf(env, 32, "--jobserver-auth=%d,%d", pipefd[0], pipefd[1]);
+      snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], pipefd[1]);
       setenv("MAKEFLAGS", env, 1);
 
       assert(close(pipefd[0]) != -1);
@@ -96,7 +97,7 @@ void test_connect()
     int pipefd[2];
     assert(pipe(pipefd) == 0);
     char env[32] = {0};
-    snprintf(env, 32, "--jobserver-auth=%d,%d", pipefd[0], pipefd[1]);
+    snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], pipefd[1]);
     setenv("MAKEFLAGS", env, 1);
 
     assert(close(pipefd[0]) != -1);

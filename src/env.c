@@ -6,10 +6,7 @@
 #include <string.h> // strchr(), strstr()
 
 #include "jobserver.h"
-
-#define MAKEFLAGS "MAKEFLAGS"
-
-#define MAKEFLAGS_AUTH "--jobserver-auth"
+#include "config.h"
 
 static inline
 char const * search_for_options_in_first_word_(char const * env, bool target,
@@ -45,7 +42,7 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
 
   search_for_options_in_first_word_(env, true, dry_run, debug, keep_going);
 
-  char const * fds = strstr(env, MAKEFLAGS_AUTH);
+  char const * fds = strstr(env, MAKEFLAGS_JOBSERVER);
   if(fds == NULL) return 0;
   fds = strchr(fds, '=');
   if(fds == NULL) goto error_proto;
@@ -101,7 +98,7 @@ int jobserver_setenv_(int read_fd, int write_fd,
 
       if(j == NULL) j = word_end;
 
-      fds = strstr(word_end, MAKEFLAGS_AUTH);
+      fds = strstr(word_end, MAKEFLAGS_JOBSERVER);
 
       if(fds == NULL)
 	{
@@ -132,7 +129,7 @@ int jobserver_setenv_(int read_fd, int write_fd,
 #undef JOBSERVER_PRINT
 
 #define JOBSERVER_PRINT(ptr, size)					\
-  snprintf(ptr, size, MAKEFLAGS_AUTH"=%d,%d", read_fd, write_fd)
+  snprintf(ptr, size, MAKEFLAGS_JOBSERVER"=%d,%d", read_fd, write_fd)
 
   const int jobserver_auth_size = j1 ? 0 : JOBSERVER_PRINT(NULL, 0);
   char jobserver_auth[jobserver_auth_size + 1];

@@ -1,5 +1,5 @@
 VERSION ?= X.Y.Z
-CFLAGS ?= -W -Wall -Werror -Wextra -g -O0 # -DUSE_SIGNALFD
+CFLAGS ?= -W -Wall -Werror -Wextra # -DUSE_SIGNALFD # -g -O0
 T_CFLAGS ?= #-DNDEBUG -flto
 BUILDIR ?= .
 prefix ?= /usr
@@ -11,9 +11,9 @@ mandir = $(datarootdir)/man
 man3dir = $(mandir)/man3
 man7dir = $(mandir)/man7
 
-#-include config.mk
+-include config.mk
 
-MAKEFLAGS=--no-builtin-rules --no-builtin-variables
+MAKEFLAGS=--no-builtin-rules
 
 .PHONY: all check example clean distclean dist install uninstall
 
@@ -39,13 +39,9 @@ $(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
 
 -include $(OBJ:%.o=%.d)
 
-$(BUILDIR)/src/%.o: src/%.c $(BUILDIR)/src/config.h
+$(BUILDIR)/src/%.o: src/%.c
 	@mkdir -p $(dir $@)
 	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -I $(BUILDIR)/src -MMD -o $@ $<
-
-$(BUILDIR)/src/config.h: src/config.h.in
-	@mkdir -p $(dir $@)
-	@cp $< $@
 
 CHECK=env init handle main
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
@@ -57,7 +53,7 @@ check: $(CHECK_OBJ:%.o=%.ok)
 
 -include $(CHECK_OBJ:%.o=%.d)
 
-$(BUILDIR)/tst/%.o: tst/%.c $(BUILDIR)/src/config.h
+$(BUILDIR)/tst/%.o: tst/%.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -I src -I $(BUILDIR)/src -MMD -o $@ $<
 
@@ -74,7 +70,7 @@ $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
 $(BUILDIR)/tst/main.ok: $(BUILDIR)/tst/main
-	$(MAKE) --no-print-directory -j 1 -C ./tst -f main.mk test #2>$<.ko 1>$<.ok
+	$(MAKE) --no-print-directory -j 1 -C ./tst -f main.mk test 2>$<.ko 1>$<.ok
 
 example: exp/example
 
@@ -89,7 +85,6 @@ $(BUILDIR)/exp/example.o: exp/example.c
 	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
 
 clean:
-	rm -f $(addprefix $(BUILDIR)/, src/config.h)
 	rm -f $(addprefix $(BUILDIR)/, $(NAME).a $(NAME).so)
 	rm -f $(addprefix $(BUILDIR)/, $(NAME)-$(VERSION).a $(NAME)-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
@@ -107,7 +102,7 @@ DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)
 	$(foreach file, $^, $(shell mkdir -p $(dir $(NAME)-$(VERSION)/$(file))))
-	$(foreach file, $^, $(shell install $(file) $(NAME)-$(VERSION)/$(file)))
+	$(foreach file, $^, $(shell cp $(file) $(NAME)-$(VERSION)/$(file)))
 	tar czfv $(NAME)-0.1.0.tar.gz $(NAME)-$(VERSION)
 	rm -r $(NAME)-$(VERSION)
 
@@ -121,7 +116,7 @@ install: $(INSTALL) man/script.sh
 
 $(includedir)/jobserver.h: src/jobserver.h
 	@mkdir -p $(dir $@)
-	install $< $@
+	cp $< $@
 
 $(libdir)/$(NAME).%: $(libdir)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
@@ -129,16 +124,16 @@ $(libdir)/$(NAME).%: $(libdir)/$(NAME)-$(VERSION).%
 
 $(libdir)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
 	@mkdir -p $(dir $@)
-	install $< $@
+	cp $< $@
 
 $(man3dir)/jobserver__%.3.gz: man/%.3
 	@mkdir -p $(dir $@)
-	@install $< $@
+	@cp $< $@
 	gzip --quiet $@
 
 $(man7dir)/jobserver.7.gz: man/jobserver.7
 	@mkdir -p $(dir $@)
-	@install $< $@
+	@cp $< $@
 	gzip --quiet $@
 
 uninstall:

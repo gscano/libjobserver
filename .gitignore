@@ -3,8 +3,6 @@ config.mk
 *.o
 *.d
 
-src/config.h
-
 tst/env
 tst/init
 tst/handle

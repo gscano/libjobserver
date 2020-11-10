@@ -1,0 +1,80 @@
+.TH JOBSERVER 3
+
+.SH NAME
+
+jobserver_wait, jobserver_collect - wait for jobserver jobs to terminate
+
+.SH SYNOPSIS
+
+.B #include <jobserver.h>
+
+.B int jobserver_wait(struct jobserver * \fIjs\fP, int \fItimeout\fP);
+.br
+.B int jobserver_collect(struct jobserver * \fIjs\fP, int \fItimeout\fP);
+
+.SH DESCRIPTION
+
+The
+.BR jobserver_wait ()
+function waits for at least 1 job of jobserver \fIjs\fP
+to be terminated within \fItimeout\fP.
+
+The
+.BR jobserver_collect ()
+function calls
+.BR jobserver_wait ()
+repeatedly and as many times as necessary to collect all remaining jobs
+of jobserver \fIjs\fP as long as each call to
+.BR jobserver_wait (),
+waiting at most \fItimeout\fP, reduces the number of jobs
+by at least one.
+
+The \fItimeout\fP argument should respect the convention described in
+.BR poll (2).
+
+When a job is terminated, the \fBjobserver_callback_return_t\fP callback
+is called (see \fBjobserver_launch_job\fP(3)).
+
+For information on how the termination of a jobserver independent
+process should be handled see section \fBHandling forks\fP in
+\fBjobserver\fP(7).
+
+.SH RETURN VALUE
+
+On success, the number of unterminated jobs left in the jobserver is returned,
+i.e. the number of jobs for which the \fIjobserver_callback_return_t\fP
+function has not been called yet.
+
+On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
+
+.SH ERROR
+
+.TP
+.B EBADF
+The reading end of the jobserver pipe is not open for reading.
+The jobserver should be closed.
+.TP
+.B ECHILD
+A child that was not a job exited
+(see section \fBHandling forks\fP in \fBjobserver\fP(7)).
+.TP
+.B EINTR
+The function was interupted by a signal that was not \fBSIGCHLD\fP.
+.TP
+.B ENOMEM
+No enough memory.
+
+.SH SEE ALSO
+
+.BR jobserver (7),
+.BR jobserver_clear (3),
+.BR jobserver_connect (3),
+.BR jobserver_close (3),
+.BR jobserver_create (3),
+.BR jobserver_create_n (3),
+.BR jobserver_launch_job (3),
+.BR jobserver_print (3),
+.BR jobserver_getenv (3),
+.BR jobserver_setenv (3),
+.BR jobserver_terminate_job (3),
+.BR jobserver_unsetenv (3)

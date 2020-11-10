@@ -17,24 +17,22 @@ MAKEFLAGS=--no-builtin-rules
 
 .PHONY: all check example clean distclean dist install uninstall
 
-NAME=libjobserver
-
-all: $(BUILDIR)/$(NAME).a $(BUILDIR)/$(NAME).so
+all: $(BUILDIR)/libjobserver.a $(BUILDIR)/libjobserver.so
 
 SRC=$(wildcard src/*.c)
 OBJ=$(addprefix $(BUILDIR)/, $(SRC:%.c=%.o))
 
-$(BUILDIR)/$(NAME).a: $(BUILDIR)/$(NAME)-$(VERSION).a
+$(BUILDIR)/libjobserver.a: $(BUILDIR)/libjobserver-$(VERSION).a
 	ln -sf $(notdir $<) $@
 
-$(BUILDIR)/$(NAME).so: $(BUILDIR)/$(NAME)-$(VERSION).so
+$(BUILDIR)/libjobserver.so: $(BUILDIR)/libjobserver-$(VERSION).so
 	ln -sf $(notdir $<) $@
 
-$(BUILDIR)/$(NAME)-$(VERSION).a: $(OBJ)
+$(BUILDIR)/libjobserver-$(VERSION).a: $(OBJ)
 	ar -rc $@ $(OBJ)
 	ranlib $@
 
-$(BUILDIR)/$(NAME)-$(VERSION).so: $(OBJ)
+$(BUILDIR)/libjobserver-$(VERSION).so: $(OBJ)
 	$(CC) -shared $(LDFLAGS) -o $@ $^
 
 -include $(OBJ:%.o=%.d)
@@ -57,11 +55,11 @@ $(BUILDIR)/tst/%.o: tst/%.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -I src -I $(BUILDIR)/src -MMD -o $@ $<
 
-$(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/$(NAME).a
+$(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/libjobserver.a
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BUILDIR)/tst/main-so: $(BUILDIR)/tst/main.o $(BUILDIR)/$(NAME).so
+$(BUILDIR)/tst/main-so: $(BUILDIR)/tst/main.o $(BUILDIR)/libjobserver.so
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(LDFLAGS) -L $(BUILDIR) -o $@ $< -ljobserver
 
@@ -76,7 +74,7 @@ example: exp/example
 
 -include $(BUILDIR)/exp/example.d
 
-$(BUILDIR)/exp/example: $(BUILDIR)/exp/example.o $(BUILDIR)/$(NAME).a
+$(BUILDIR)/exp/example: $(BUILDIR)/exp/example.o $(BUILDIR)/libjobserver.a
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ $^
 
@@ -85,8 +83,8 @@ $(BUILDIR)/exp/example.o: exp/example.c
 	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
 
 clean:
-	rm -f $(addprefix $(BUILDIR)/, $(NAME).a $(NAME).so)
-	rm -f $(addprefix $(BUILDIR)/, $(NAME)-$(VERSION).a $(NAME)-$(VERSION).so)
+	rm -f $(addprefix $(BUILDIR)/, libjobserver.a libjobserver.so)
+	rm -f $(addprefix $(BUILDIR)/, libjobserver-$(VERSION).a libjobserver-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok))
@@ -101,14 +99,14 @@ DISTFILES+=$(wildcard tst/*.c) tst/main.mk
 DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)
-	$(foreach file, $^, $(shell mkdir -p $(dir $(NAME)-$(VERSION)/$(file))))
-	$(foreach file, $^, $(shell cp $(file) $(NAME)-$(VERSION)/$(file)))
-	tar czfv $(NAME)-0.1.0.tar.gz $(NAME)-$(VERSION)
-	rm -r $(NAME)-$(VERSION)
+	$(foreach file, $^, $(shell mkdir -p $(dir jobserver-$(VERSION)/$(file))))
+	$(foreach file, $^, $(shell cp $(file) jobserver-$(VERSION)/$(file)))
+	tar czfv jobserver-$(VERSION).tar.gz jobserver-$(VERSION)
+	rm -r jobserver-$(VERSION)
 
 INSTALL=$(includedir)/jobserver.h
-INSTALL+=$(libdir)/$(NAME)-$(VERSION).a $(libdir)/$(NAME)-$(VERSION).so
-INSTALL+=$(libdir)/$(NAME).a $(libdir)/$(NAME).so
+INSTALL+=$(libdir)/libjobserver-$(VERSION).a $(libdir)/libjobserver-$(VERSION).so
+INSTALL+=$(libdir)/libjobserver.a $(libdir)/libjobserver.so
 INSTALL+=$(addprefix $(man3dir)/jobserver__, $(addsuffix .gz, $(shell ./man/script.sh echo | cut -d' ' -f1)))
 INSTALL+=$(man7dir)/jobserver.7.gz
 install: $(INSTALL) man/script.sh
@@ -118,11 +116,11 @@ $(includedir)/jobserver.h: src/jobserver.h
 	@mkdir -p $(dir $@)
 	cp $< $@
 
-$(libdir)/$(NAME).%: $(libdir)/$(NAME)-$(VERSION).%
+$(libdir)/libjobserver.%: $(libdir)/libjobserver-$(VERSION).%
 	@mkdir -p $(dir $@)
 	ln -sf $(notdir $<) $@
 
-$(libdir)/$(NAME)-$(VERSION).%: $(BUILDIR)/$(NAME)-$(VERSION).%
+$(libdir)/libjobserver-$(VERSION).%: $(BUILDIR)/libjobserver-$(VERSION).%
 	@mkdir -p $(dir $@)
 	cp $< $@
 

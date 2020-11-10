@@ -9,6 +9,7 @@ tst/handle
 tst/main
 
 tst/*.ok
+tst/main.ko
 
 exp/example
 
@@ -21,4 +22,5 @@ libjobserver.a
 libjobserver.so
 libjobserver-*.a
 libjobserver-*.so
-libjobserver-*.tar.gz
+
+jobserver-*.tar.gz

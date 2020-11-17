@@ -29,4 +29,4 @@ libjobserver.so
 libjobserver-*.a
 libjobserver-*.so
 
-jobserver-*.tar.gz
+libjobserver-*.tar.gz

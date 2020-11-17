@@ -101,8 +101,8 @@ clean:
 	rm -f $(addprefix $(BUILDIR)/, libjobserver-$(VERSION).a libjobserver-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
-	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok))
-	rm -f $(BUILDIR)/tst/main
+	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok) main.stderr)
+	rm -f libjobserver-$(VERSION)
 
 distclean: clean
 	rm -f `find . -name '*~'`
@@ -113,10 +113,10 @@ DISTFILES+=$(wildcard tst/*.c) tst/main.mk tst/main.sh
 DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)
-	$(foreach file, $^, $(shell mkdir -p $(dir jobserver-$(VERSION)/$(file))))
-	$(foreach file, $^, $(shell cp $(file) jobserver-$(VERSION)/$(file)))
-	tar czfv jobserver-$(VERSION).tar.gz jobserver-$(VERSION)
-	rm -r jobserver-$(VERSION)
+	$(foreach file, $^, $(shell mkdir -p $(dir libjobserver-$(VERSION)/$(file))))
+	$(foreach file, $^, $(shell cp $(file) libjobserver-$(VERSION)/$(file)))
+	tar czfv libjobserver-$(VERSION).tar.gz libjobserver-$(VERSION)
+	rm -r libjobserver-$(VERSION)
 
 INSTALL=$(includedir)/jobserver.h
 INSTALL+=$(libdir)/libjobserver-$(VERSION).a $(libdir)/libjobserver-$(VERSION).so

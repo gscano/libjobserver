@@ -7,7 +7,6 @@ arch:
 
 os:
   - linux
-  - osx
 
 compiler:
   - gcc

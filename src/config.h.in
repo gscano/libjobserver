@@ -14,6 +14,4 @@
 #define MAKEFLAGS "MAKEFLAGS"
 #endif
 
-#ifndef MAKEFLAGS_JOBSERVER
-#define MAKEFLAGS_JOBSERVER "--jobserver-auth"
-#endif
+// #define MAKEFLAGS_JOBSERVER "--jobserver-..." // replace by 'make detect-makeflags--jobserver-'

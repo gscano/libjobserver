@@ -37,9 +37,16 @@ $(BUILDIR)/libjobserver-$(VERSION).so: $(OBJ)
 
 -include $(OBJ:%.o=%.d)
 
-$(BUILDIR)/src/%.o: src/%.c
+$(BUILDIR)/src/%.o: src/%.c $(BUILDIR)/src/config.h
 	@mkdir -p $(dir $@)
 	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -I $(BUILDIR)/src -MMD -o $@ $<
+
+$(BUILDIR)/src/config.h: src/config.h.in
+	@mkdir -p $(dir $@)
+	$(if $(shell $(MAKE) -j 2 detect-makeflags--jobserver-), echo '#define MAKEFLAGS_JOBSERVER "--jobserver-$(shell $(MAKE) -j 2 detect-makeflags--jobserver-)"' | cat $< - > $@, $(error "Cannot detect MAKEFLAGS's '--jobserver-' section!"))
+
+detect-makeflags--jobserver-:
+	@echo "$$MAKEFLAGS" | grep -- '--jobserver-' | sed 's/.*--jobserver-\([a-z]*\)=.*/\1/g'
 
 CHECK=env init handle main
 CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
@@ -51,7 +58,7 @@ check: $(CHECK_OBJ:%.o=%.ok)
 
 -include $(CHECK_OBJ:%.o=%.d)
 
-$(BUILDIR)/tst/%.o: tst/%.c
+$(BUILDIR)/tst/%.o: tst/%.c $(BUILDIR)/src/config.h
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -I src -I $(BUILDIR)/src -MMD -o $@ $<
 
@@ -67,8 +74,14 @@ $(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
 	$< > $<.ko 2>&1
 	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
-$(BUILDIR)/tst/main.ok: $(BUILDIR)/tst/main
-	$(MAKE) --no-print-directory -j 1 -C ./tst -f main.mk test 2>$<.ko 1>$<.ok
+$(BUILDIR)/tst/main.ok: $(BUILDIR)/tst/main $(BUILDIR)/tst/main.mk
+	$(MAKE) -j 1 -C $(BUILDIR)/tst -f main.mk test 2>$<.stderr 1>$<.ko
+	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Check failed!"))
+
+ifneq ($(BUILDIR)/tst/main.mk,./tst/main.mk)
+$(BUILDIR)/tst/main.mk: tst/main.mk
+	cp $< $@
+endif
 
 example: exp/example
 
@@ -83,6 +96,7 @@ $(BUILDIR)/exp/example.o: exp/example.c
 	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
 
 clean:
+	rm -f $(addprefix $(BUILDIR)/, src/config.h)
 	rm -f $(addprefix $(BUILDIR)/, libjobserver.a libjobserver.so)
 	rm -f $(addprefix $(BUILDIR)/, libjobserver-$(VERSION).a libjobserver-$(VERSION).so)
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
@@ -94,8 +108,8 @@ distclean: clean
 	rm -f `find . -name '*~'`
 
 DISTFILES=Makefile LICENSE
-DISTFILES+=$(wildcard src/*.c) $(wildcard src/*.h)
-DISTFILES+=$(wildcard tst/*.c) tst/main.mk
+DISTFILES+=$(wildcard src/*.c) $(wildcard src/*.h) src/config.h.in
+DISTFILES+=$(wildcard tst/*.c) tst/main.mk tst/main.sh
 DISTFILES+=exp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)

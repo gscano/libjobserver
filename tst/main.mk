@@ -1,11 +1,17 @@
-MAKE=/usr/bin/make
+MAKEFLAGS+=--no-print-directory
+
+ifeq ($(MAKE),make)
+MAKE != which $(MAKE)
+endif
 
 F=-f main.mk
 W=$(F) w.
 E=export JOBSERVER_TEST=$$JOBSERVER_TEST
 
 all:
+	@$(MAKE) --version
 	@echo "Error"
+	@exit 1
 
 TARGETS=make-to-jobserver jobserver-to-make make-to-jobserver-to-make
 
@@ -20,6 +26,7 @@ jobserver-to-make:
 	+$(E)/$@; ./main 2 $(MAKE) '$(F) jtm1'
 
 jtm1:
+	@echo $(MAKEFLAGS)
 	$(E)/$@; $(MAKE) $(F) two
 	+$(E)/$@; $(MAKE) $(F) multi
 

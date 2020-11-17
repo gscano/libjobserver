@@ -138,8 +138,8 @@ Letters \(aqn\(aq, \(aqd\(aq, and \(aqk\(aq,
 corresponding respectively to the \fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP
 options, are looked up or inserted in the first word of this variable.
 
-The string
-.B --jobserver-auth=
+The string \fB--jobserver-fds=\fP (for GNU Make versions lower than 4.1) or
+\fB--jobserver-auth=\fP (for GNU Make versions greater than 4.2)
 is followed by a pair, separated by a comma (\(aq,\(aq), of file descriptors
 corresponding to the read and write sides of the token pipe.
 
@@ -151,13 +151,7 @@ Section 13.1
 of
 .UR https://www.gnu.org/software/make/
 GNU Make
-.UE
-version >= 4.2.
-
-.SH NOTES
-
-For versions before version 4.2, the jobserver will always run one job at a time
-when called by GNU Make.
+.UE .
 
 .SH EXAMPLE
 
@@ -171,7 +165,7 @@ a.out ! '/usr/bin/make --version' '/usr/bin/sleep 2'
 
 When '!' is given, it expects the jobserver to be preexisting (usually created
 by \fBmake\fP(1)).
-
+.ta 0.8in
 .EX
 #include <errno.h>
 #include <stdio.h>

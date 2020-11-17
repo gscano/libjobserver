@@ -3,13 +3,17 @@ config.mk
 *.o
 *.d
 
+src/config.h
+
 tst/env
 tst/init
 tst/handle
 tst/main
 
 tst/*.ok
-tst/main.ko
+tst/main.stderr
+
+tst/make
 
 exp/example
 

@@ -1,10 +1,13 @@
 language: c
 
-dist: focal
+dist: focal # xenial
+
+arch:
+  - amd64
 
 os:
   - linux
-#  - osx
+  - osx
 
 compiler:
   - gcc
@@ -33,8 +36,6 @@ script:
   - make
   - make example
   - make check
-  - make dist
-  - make install prefix=dest
 
 after_failure:
   less src/config.h

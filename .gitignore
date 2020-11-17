@@ -1,5 +1,7 @@
 config.mk
 
+make
+
 *.o
 *.d
 

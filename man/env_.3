@@ -47,7 +47,8 @@ The
 function returns \fB0\fP and both \fIread\fP and \fIwrite\fP are set to \fB-1\fP
 if the jobserver is non existant, either because the
 \fBMAKEFLAGS\fP environment variable is not defined or because the
-\fB--jobserver-auth\fP option is not used (see \fBENVIRONMENT\fP in \fBjobserver\fP(7)).
+\fB--jobserver-auth\fP (or \fB--jobserver-fds\fP) option is not used
+(see \fBENVIRONMENT\fP in \fBjobserver\fP(7)).
 The \fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP statuses, if present,
 are always collected.
 

@@ -1,7 +1,11 @@
 config.mk
 
+make
+
 *.o
 *.d
+
+src/config.h
 
 tst/env
 tst/init
@@ -9,7 +13,9 @@ tst/handle
 tst/main
 
 tst/*.ok
-tst/main.ko
+tst/main.stderr
+
+tst/make
 
 exp/example
 
@@ -23,4 +29,4 @@ libjobserver.so
 libjobserver-*.a
 libjobserver-*.so
 
-jobserver-*.tar.gz
+libjobserver-*.tar.gz

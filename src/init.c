@@ -33,11 +33,20 @@ int jobserver_init_(struct jobserver * js, size_t size)
 int jobserver_connect(struct jobserver * js)
 {
   if(jobserver_getenv(js) == -1)
-    return -1;// errno: EBADF, EPROTO
+    return -1;// errno: EPROTO
+  else
+    return jobserver_reconnect(js);
+}
 
+int jobserver_reconnect(struct jobserver * js)
+{
   if(js->poll[1].fd == -1 || js->write == -1)
     {
-      errno = ENODEV;
+      if(js->poll[1].fd == js->write)
+	errno = ENODEV;
+      else
+	errno = EBADF;
+
       return -1;
     }
 

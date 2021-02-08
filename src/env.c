@@ -31,6 +31,34 @@ char const * search_for_options_in_first_word_(char const * env, bool target,
   return env;
 }
 
+static inline
+char const * atofd(char const * str, int * fd)
+{
+  if(*str < '0' || *str > '9')
+    {
+      if(str[0] != '\0' && str[0] == '-' && str[1] == '1')
+	return str + 2;
+      else
+	return NULL;
+    }
+
+  long int i = 0;
+
+  while('0' < *str && *str < '9')
+    {
+      i *= 10;
+      i += *str - '0';
+      ++str;
+
+      if(i > INT_MAX)
+	return NULL;
+    }
+
+  *fd = (int)i;
+
+  return str;
+}
+
 int jobserver_getenv_(int * read_fd, int * write_fd,
 		      bool * dry_run, bool * debug, bool * keep_going)
 {
@@ -38,43 +66,30 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
   *dry_run = *keep_going = *debug = false;
 
   char const * env = getenv(MAKEFLAGS);
+
   if(env == NULL) return 0;
+  env = search_for_options_in_first_word_(env, true, dry_run, debug, keep_going);
 
-  search_for_options_in_first_word_(env, true, dry_run, debug, keep_going);
+  env = strstr(env, MAKEFLAGS_JOBSERVER);
+  if(env == NULL) return 0;
+  env = strchr(env, '=');
+  if(env == NULL) goto error;
+  ++env;
 
-  char const * fds = strstr(env, MAKEFLAGS_JOBSERVER);
-  if(fds == NULL) return 0;
-  fds = strchr(fds, '=');
-  if(fds == NULL) goto error_proto;
-  ++fds;
+  env = atofd(env, read_fd);
+  if(env == NULL)
+    goto error;
 
-  long int fd;
-  errno = 0;
+  if(*env++ != ',') goto error;
 
-  env = fds;
-  fd = strtol(fds, (char **)&fds, 10);// errno: EINVAL, ERANGE
-  if(fds == env || errno) goto error_proto;
-  if(fd < 0 || fd > INT_MAX) goto error_badf;
-  *read_fd = (int)fd;
-
-  if(*fds++ != ',') goto error_proto;
-
-  env = fds;
-  fd = strtol(fds, (char **)&fds, 10);// errno: EINVAL, ERANGE
-  if(fds == env || errno) goto error_proto;
-  if(fd < 0 || fd > INT_MAX) goto error_badf;
-  *write_fd = (int)fd;
+  env = atofd(env, write_fd);
+  if(env == NULL)
+    goto error;
 
   return 0;
 
- error_badf:
-  errno = EBADF;
-  goto error;
-
- error_proto:
-  errno = EPROTO;
-
  error:
+  errno = EPROTO;
   *read_fd = *write_fd = -1;
 
   return -1;

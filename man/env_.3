@@ -63,13 +63,13 @@ status of the process are kept.
 .SH ERROR
 
 .TP
-.B EBADF
-(\fBjobserver_getenv_\fP())
-One of the \fIread\fP or \fIwrite\fP file descriptor could not be parsed.
-.TP
 .B ENOMEM
 (\fBjobserver_setenv_\fP())
 Not enough memory to add or change the \fBMAKEFLAGS\fP environment variable.
+.TP
+.B EPROTO
+(\fBjobserver_getenv\fP())
+Error while parsing the environment.
 
 .SH ATTRIBUTES
 

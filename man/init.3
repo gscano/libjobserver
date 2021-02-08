@@ -8,6 +8,8 @@ jobserver_connect, jobserver_create, jobserver_create_n, jobserver_close - conne
 .B #include <jobserver.h>
 
 .B int jobserver_connect(struct jobserver * \fIjs\fP);
+.br
+.B int jobserver_reconnect(struct jobserver * \fIjs\fP);
 
 .B int jobserver_create  (struct jobserver * \fIjs\fP, char const * \fItokens\fP);
 .br
@@ -20,6 +22,12 @@ jobserver_connect, jobserver_create, jobserver_create_n, jobserver_close - conne
 The
 .BR jobserver_connect ()
 function tries to connect to an environment-defined jobserver \fIjs\fP.
+.br
+The
+.BR jobserver_reconnect()
+function tries to connect to jobserver \fIjs\fP, usually initialized with
+.BR jobserver_getenv (3),
+and without looking at the environment again.
 
 The
 .BR jobserver_create ()
@@ -61,7 +69,7 @@ On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
 (Linux only)
 The signalfd file descriptor could not be created.
 
-.SS \fBjobserver_connect\fP()
+.SS \fBjobserver_connect\fP() and \fBjobserver_reconnect\fP()
 .TP
 .B EACCES
 The jobserver pipe is closed because the current process was spawned
@@ -77,6 +85,7 @@ Either one of the jobserver file descriptors is invalid.
 No jobserver found.
 .TP
 .B EPROTO
+(\fBjobserver_connect\fP() only)
 Error while parsing the environment.
 
 .SS \fBjobserver_create\fP() and \fBjobserver_create_n\fP()

@@ -8,7 +8,7 @@ The code is available on [GitHub](https://github.com/gscano/jobserver) and [code
 
 ## Compilation
 
-To compile the library run `make T_CFLAGS=-NDEBUG`; to install it, run `make install prefix='<path to installation root>'`.
+To compile the library run `make T_CFLAGS=-DNDEBUG`; to install it, run `make install prefix='<path to installation root>'`.
 
 On Linux, it is possible to add `-DUSE_SIGNALFD` to `T_CFLAGS` to use [signalfd(2)](https://manpages.debian.org/stable/manpages-dev/signalfd.2.html). Otherwise, the self-pipe trick is used.
 

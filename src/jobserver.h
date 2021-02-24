@@ -10,8 +10,6 @@
 struct jobserver
 {
   bool dry_run;
-  bool debug;
-  bool keep_going;
 
   pid_t stopped;
   int status;
@@ -52,10 +50,8 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		    const char * separator, const char * job_separator,
 		    const char * inter_job_separator);
 
-int jobserver_getenv_(int * read_fd, int * write_fd,
-		      bool * dry_run, bool * debug, bool * keep_going);
-int jobserver_setenv_(int read_fd, int write_fd,
-		      bool dry_run, bool debug, bool keep_going);
+int jobserver_getenv_(int * read_fd, int * write_fd, bool * dry_run);
+int jobserver_setenv_(int read_fd, int write_fd, bool dry_run);
 
 void jobserver_close_(struct jobserver * js, bool inherit);
 

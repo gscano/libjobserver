@@ -17,10 +17,8 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
   int read_;
   int write_;
   bool dry_run_;
-  bool debug_;
-  bool keep_going_;
 
-  int status = jobserver_getenv_(&read_, &write_, &dry_run_, &debug_, &keep_going_);
+  int status = jobserver_getenv_(&read_, &write_, &dry_run_);
 
   if(status != ret)
     {
@@ -37,7 +35,7 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
 }
 
 void write(int id, const char * env,
-	   int read, int write, bool dry_run, bool debug, bool keep_going,
+	   int read, int write, bool dry_run,
 	   const char * renv)
 {
   if(env != NULL)
@@ -47,7 +45,7 @@ void write(int id, const char * env,
 
   printf("Test #%d\n", id);
 
-  assert(jobserver_setenv_(read, write, dry_run, debug, keep_going) == 0);
+  assert(jobserver_setenv_(read, write, dry_run) == 0);
 
   if(memcmp(getenv("MAKEFLAGS"), renv, strlen(renv)) != 0)
     {
@@ -86,27 +84,21 @@ int main()
   read(18, "--warn-undefined-variables", -1, -1, false, 0);
   read(19, "n "MAKEFLAGS_JOBSERVER"=-2,4", -1, -1, true, -1);
 
-  write(1, NULL, 3, 4, false, false, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(2, NULL, 3, 4, true, false, false, "n -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(3, NULL, 3, 4, false, true, true, "dk -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(4, "", 3, 4, true, false, false, "n -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(5, "", 3, 4, false, false, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(6, "d", 3, 4, false, false, false, "d -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(7, "d", 3, 4, true, false, false, "dn -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(8, "ni", 3, 4, false, false, false, "ni -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(9, "ni", 3, 4, true, false, true, "nik -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(10, "-- NAME=VALUE", 3, 4, false, false, false, "-j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
-  write(11, "-- NAME=VALUE", 3, 4, false, true, true, "dk -j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
-  write(12, "in -- NAME=VALUE", 3, 4, false, true, false, "ind -j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
-  write(13, "i --long-option -- NAME=VALUE", 3, 4, true, true, true,
-	"indk -j "MAKEFLAGS_JOBSERVER"=3,4 --long-option -- NAME=VALUE");
-  write(14, "i --long-option -j4 "MAKEFLAGS_JOBSERVER"=1,2 -- NAME=VALUE", 3, 4, true, true, true,
-	"indk --long-option -j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
-  write(15, "i", -1, -1, false, true, true, "idk");
-  write(16, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", -1, -1, false, false, false, "");
-  write(17, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", 3, 4, false, false, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(18, "i -j4 "MAKEFLAGS_JOBSERVER"=1,2", 3, 4, false, true, false, "id -j "MAKEFLAGS_JOBSERVER"=3,4");
-  write(19, "i -j1 --long-option -- NAME=VALUE", -1, -1, false, false, false,
+  write(1, NULL, 3, 4, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(2, NULL, 3, 4, true, "n -j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(4, "", 3, 4, true, "n -j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(5, "", 3, 4, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(6, "d", 3, 4, false, "d -j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(7, "d", 3, 4, true, "dn -j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(8, "ni", 3, 4, false, "ni -j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(10, "-- NAME=VALUE", 3, 4, false, "-j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
+  write(13, "i --long-option -- NAME=VALUE", 3, 4, true,
+	"in -j "MAKEFLAGS_JOBSERVER"=3,4 --long-option -- NAME=VALUE");
+  write(14, "i --long-option -j4 "MAKEFLAGS_JOBSERVER"=1,2 -- NAME=VALUE", 3, 4, true,
+	"in --long-option -j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
+  write(16, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", -1, -1, false, "");
+  write(17, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", 3, 4, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
+  write(19, "i -j1 --long-option -- NAME=VALUE", -1, -1, false,
 	"i -j1 --long-option -- NAME=VALUE");
 
   setenv("MAKEFLAGS", env_, 1);

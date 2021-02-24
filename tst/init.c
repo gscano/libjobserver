@@ -113,8 +113,6 @@ void test_create()
   struct jobserver js;
 
   js.dry_run = false;
-  js.debug = true;
-  js.keep_going = false;
 
   {
     assert(jobserver_create(&js, "") == 1);

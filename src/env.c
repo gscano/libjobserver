@@ -10,7 +10,7 @@
 
 static inline
 char const * search_for_options_in_first_word_(char const * env, bool target,
-					       bool * dry_run, bool * debug, bool * keep_going)
+					       bool * dry_run)
 {
   if(env[0] != '-')
     {
@@ -19,8 +19,6 @@ char const * search_for_options_in_first_word_(char const * env, bool target,
 	  switch(*env)
 	    {
 	    case 'n': *dry_run = target; break;
-	    case 'd': *debug = target; break;
-	    case 'k': *keep_going = target; break;
 	    default : ;
 	    }
 
@@ -59,16 +57,15 @@ char const * atofd(char const * str, int * fd)
   return str;
 }
 
-int jobserver_getenv_(int * read_fd, int * write_fd,
-		      bool * dry_run, bool * debug, bool * keep_going)
+int jobserver_getenv_(int * read_fd, int * write_fd, bool * dry_run)
 {
   *read_fd = *write_fd = -1;
-  *dry_run = *keep_going = *debug = false;
+  *dry_run = false;
 
   char const * env = getenv(MAKEFLAGS);
 
   if(env == NULL) return 0;
-  env = search_for_options_in_first_word_(env, true, dry_run, debug, keep_going);
+  env = search_for_options_in_first_word_(env, true, dry_run);
 
   env = strstr(env, MAKEFLAGS_JOBSERVER);
   if(env == NULL) return 0;
@@ -95,8 +92,7 @@ int jobserver_getenv_(int * read_fd, int * write_fd,
   return -1;
 }
 
-int jobserver_setenv_(int read_fd, int write_fd,
-		      bool dry_run, bool debug, bool keep_going)
+int jobserver_setenv_(int read_fd, int write_fd, bool dry_run)
 {
   char const * env, * word_end, * before, * j, * fds, * after, * end;
 
@@ -105,8 +101,7 @@ int jobserver_setenv_(int read_fd, int write_fd,
   if(env == NULL) env = word_end = before = j = fds = after = end = "";
   else
     {
-      word_end = search_for_options_in_first_word_(env, false,
-						   &dry_run, &debug, &keep_going);
+      word_end = search_for_options_in_first_word_(env, false, &dry_run);
 
       before = word_end;
       j = strstr(word_end, "-j");
@@ -133,9 +128,9 @@ int jobserver_setenv_(int read_fd, int write_fd,
   bool j1 = read_fd < 0 && write_fd < 0;
 
 #define JOBSERVER_PRINT(ptr, size)					\
-  snprintf(ptr, size, "%.*s%s%s%s",					\
+  snprintf(ptr, size, "%.*s%s",						\
 	   (int)(word_end - env), env,					\
-	   dry_run ? "n" : "", debug ? "d" : "", keep_going ? "k" : "")
+	   dry_run ? "n" : "")
 
   const int word_size = JOBSERVER_PRINT(NULL, 0);
   char word[word_size + 1];
@@ -180,18 +175,15 @@ int jobserver_setenv_(int read_fd, int write_fd,
 
 int jobserver_getenv(struct jobserver * js)
 {
-  return jobserver_getenv_(&js->poll[1].fd, &js->write,
-			   &js->dry_run, &js->debug, &js->keep_going);
+  return jobserver_getenv_(&js->poll[1].fd, &js->write, &js->dry_run);
 }
 
 int jobserver_setenv(struct jobserver const * js)
 {
-  return jobserver_setenv_(js->poll[1].fd, js->write,
-			   js->dry_run, js->debug, js->keep_going);
+  return jobserver_setenv_(js->poll[1].fd, js->write, js->dry_run);
 }
 
 int jobserver_unsetenv(struct jobserver const * js)
 {
-  return jobserver_setenv_(-1, -1,
-			   js->dry_run, js->debug, js->keep_going);
+  return jobserver_setenv_(-1, -1, js->dry_run);
 }

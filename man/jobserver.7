@@ -33,10 +33,6 @@ sharing the ability to do so with its siblings and parents.
 .in +0.5i
 .br
 .B bool \fIdry_run\fP;
-.br
-.B bool \fIdebug\fP;
-.br
-.B bool \fIkeep_going\fP;
 
 .B pid_t \fIstopped\fP;
 .br
@@ -53,22 +49,14 @@ sharing the ability to do so with its siblings and parents.
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
-.B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP, bool * \fIdebug\fP, bool * \fIkeep_going\fP);
+.B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP);
 .br
-.B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP, bool \fIdebug\fP, bool \fIkeep_going\fP);
+.B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP);
 
 .SS Configuration
 
-A jobserver, either created or joined, has 3
-properties related to the actions that it
-performs. Depending on the status of each flag, a
-program using the jobserver:
-.IP
-* shall stop immediately when marked \fIdry_run\fP;
-.IP
-* print debug information when marked \fIdebug\fP;
-.IP
-* ignore errors (usually of children) as much as possible when marked \fIkeep_going\fP.
+A jobserver, either created or joined, shall be stopped immediately
+if \fIdry_run\fP is \fBtrue\fP.
 
 .SS Handling forks
 
@@ -87,7 +75,7 @@ the terminated process might not be a job. In this case,
 \fB-1\fP is returned, \fIerrno\fP is set to \fBECHILD\fP, and
 the \fIstopped\fP and \fIstatus\fP fields of the \fBjobserver\fP
 structure receive the pid and the exit status of the stopped
-process (as per \fBwaitpid\fP(2)).
+process as per \fBwaitpid\fP(2).
 
 .IP
 * If the application waited for a child to exit (see \fBwait\fP(2)),
@@ -115,13 +103,13 @@ If \fIinherit\fP is true, the jobserver remains available in the child
 but a new local instance has to be created with \fBjobserver_connect\fP(3).
 .PP
 
-.B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP, bool * \fIdebug\fP, bool * \fIkeep_going\fP);
+.B int jobserver_getenv_(int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP);
 
 .IP
 See \fBjobserver_getenv_\fP(3).
 .PP
 
-.B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP, bool \fIdebug\fP, bool \fIkeep_going\fP);
+.B int jobserver_setenv_(int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP);
 
 .IP
 See \fBjobserver_setenv_\fP(3).
@@ -134,9 +122,8 @@ is passed from one process to the other with the
 .B MAKEFLAGS
 environment variable.
 
-Letters \(aqn\(aq, \(aqd\(aq, and \(aqk\(aq,
-corresponding respectively to the \fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP
-options, are looked up or inserted in the first word of this variable.
+The letter \(aqn\(aq corresponding to the \fIdry_run\fP option
+is looked up or inserted in the first word of this variable.
 
 The string \fB--jobserver-fds=\fP (for GNU Make versions lower than 4.1) or
 \fB--jobserver-auth=\fP (for GNU Make versions greater than 4.2)

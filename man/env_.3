@@ -9,9 +9,9 @@ variable
 
 .B #include <jobserver.h>
 
-.B int jobserver_getenv_(int * \fIread\fP, int * \fIwrite\fP, bool * \fIdry_run\fP, bool * \fIdebug\fP, bool * \fIKeep_going\fP);
+.B int jobserver_getenv_(int * \fIread\fP, int * \fIwrite\fP, bool * \fIdry_run\fP);
 .br
-.B int jobserver_setenv_(int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP, bool \fIdebug\fP, bool \fIkeep_going\fP);
+.B int jobserver_setenv_(int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
 
 .SH DESCRIPTION
 
@@ -22,7 +22,7 @@ function looks for the
 and
 .I write
 file descriptors of the jobserver token pipe as well as its
-\fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP status.
+\fIdry_run\fP status.
 
 The
 .BR jobserver_setenv_ ()
@@ -30,8 +30,8 @@ function sets the jobserver token pipe file descriptors
 .I read
 and
 .I write
-in the environment as well as the
-\fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP statuses.
+in the environment as well as its
+\fIdry_run\fP status.
 
 .SH RETURN VALUE
 
@@ -49,16 +49,15 @@ if the jobserver is non existant, either because the
 \fBMAKEFLAGS\fP environment variable is not defined or because the
 \fB--jobserver-auth\fP (or \fB--jobserver-fds\fP) option is not used
 (see \fBENVIRONMENT\fP in \fBjobserver\fP(7)).
-The \fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP statuses, if present,
-are always collected.
+The \fIdry_run\fP status, if present,
+is always collected.
 
 The
 .BR jobserver_setenv_ ()
 function overwrites any preexisting jobserver. When \fIread\fP and \fIwrite\fP
 are negative, the jobserver is completely removed from the environment. Note that
 this may not remove the \fBMAKEFLAGS\fP variable from the environment and that
-other options corresponding to the \fIdry_run\fP, \fIdebug\fP, and \fIkeep_going\fP
-status of the process are kept.
+other options, including the \fIdry_run\fP status, are kept.
 
 .SH ERROR
 

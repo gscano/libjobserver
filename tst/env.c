@@ -5,20 +5,17 @@
 #include <stdbool.h> // bool
 #include <stdio.h> // printf()
 #include <stdlib.h> // EXIT_SUCCESS
-#include <string.h> // memcmp()
+#include <string.h> // strcmp()
 
 void read(int id, const char * env, int read, int write, bool dry_run, int ret)
 {
   printf("Test #%d\n", id);
 
-  if(env == NULL) env = "";
-  assert(setenv("MAKEFLAGS", env, 1) == 0);
-
   int read_;
   int write_;
   bool dry_run_;
 
-  int status = jobserver_getenv_(&read_, &write_, &dry_run_);
+  int status = jobserver_read_env_(env, &read_, &write_, &dry_run_);
 
   if(status != ret)
     {
@@ -30,40 +27,29 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
   assert(dry_run_ == dry_run);
   assert(read_ == read);
   assert(write_ == write);
-
-  assert(unsetenv("MAKEFLAGS") == 0);
 }
 
-void write(int id, const char * env,
+void write(int id, const char * env_,
 	   int read, int write, bool dry_run,
 	   const char * renv)
 {
-  if(env != NULL)
-    {
-      assert(setenv("MAKEFLAGS", env, 1) == 0);
-    }
-
   printf("Test #%d\n", id);
 
-  assert(jobserver_setenv_(read, write, dry_run) == 0);
+  char * env = jobserver_write_env_(env_, read, write, dry_run);
 
-  if(memcmp(getenv("MAKEFLAGS"), renv, strlen(renv)) != 0)
+  if(env == NULL)
+    assert(renv == NULL);
+
+  if(strcmp(env, renv) != 0)
     {
       fprintf(stderr, "Incorrect environment: '%s' ('%s' expected)\n",
-	      getenv("MAKEFLAGS"), renv);
+	      env, renv);
       assert(false);
     }
-
-  assert(unsetenv("MAKEFLAGS") == 0);
 }
 
 int main()
 {
-  char const * env = getenv("MAKEFLAGS");
-  if(env == NULL) env = "";
-  char env_[strlen(env) + 1];
-  strcpy(env_, env);
-
   read(1, NULL, -1, -1, false, 0);
   read(2, "", -1, -1, false, 0);
   read(3, "n", -1, -1, true, 0);
@@ -96,12 +82,10 @@ int main()
 	"in -j "MAKEFLAGS_JOBSERVER"=3,4 --long-option -- NAME=VALUE");
   write(14, "i --long-option -j4 "MAKEFLAGS_JOBSERVER"=1,2 -- NAME=VALUE", 3, 4, true,
 	"in --long-option -j "MAKEFLAGS_JOBSERVER"=3,4 -- NAME=VALUE");
-  write(16, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", -1, -1, false, "");
+  write(16, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", -1, -1, false, "-j "MAKEFLAGS_JOBSERVER"=-1,-1");
   write(17, "-j4 "MAKEFLAGS_JOBSERVER"=1,2", 3, 4, false, "-j "MAKEFLAGS_JOBSERVER"=3,4");
   write(19, "i -j1 --long-option -- NAME=VALUE", -1, -1, false,
-	"i -j1 --long-option -- NAME=VALUE");
-
-  setenv("MAKEFLAGS", env_, 1);
+	"i -j --jobserver-auth=-1,-1 -j1 --long-option -- NAME=VALUE");
 
   return EXIT_SUCCESS;
 }

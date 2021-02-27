@@ -2,73 +2,70 @@
 
 .SH NAME
 
-jobserver_getenv_, jobserver_setenv_ - access the jobserver environment
-variable
+jobserver_read_env_, jobserver_write_env_ - manipulate an environment string
 
 .SH SYNOPSIS
 
 .B #include <jobserver.h>
 
-.B int jobserver_getenv_(int * \fIread\fP, int * \fIwrite\fP, bool * \fIdry_run\fP);
+.B int jobserver_read_env_(char const * \fIenv\fP, int * \fIread\fP, int * \fIwrite\fP, bool * \fIdry_run\fP);
 .br
-.B int jobserver_setenv_(int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
+.B char * jobserver_write_env_(char const * \fIenv\fP, int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
 
 .SH DESCRIPTION
 
 The
-.BR jobserver_getenv_ ()
+.BR jobserver_read_env_ ()
 function looks for the
 .I read
 and
 .I write
 file descriptors of the jobserver token pipe as well as its
-\fIdry_run\fP status.
+\fIdry_run\fP status in \fIenv\fP.
 
 The
-.BR jobserver_setenv_ ()
-function sets the jobserver token pipe file descriptors
-.I read
-and
-.I write
-in the environment as well as its
-\fIdry_run\fP status.
+.BR jobserver_write_env_ ()
+function updates the environment string \fIenv\fP in a newly
+allocated buffer.
+If one of the file descriptors \fIread\fP and \fIwrite\fP is
+less than \fB-1\fP then the file descriptors are not written,
+effectively removing the jobserver from the environment string.
+The \fIdry_run\fP status is always updated.
+
 
 .SH RETURN VALUE
 
 On success, the
-.BR jobserver_getenv_ ()
-and
-.BR jobserver_setenv_ ()
-functions return \fB0\fP. On error, \fP-1\fP is returned and
+.BR jobserver_read_env_ ()
+function returns \fB0\fP. On error, \fP-1\fP is returned and
 \fIerrno\fP is set accordingly.
 
-The
-.BR jobserver_getenv_ ()
-function returns \fB0\fP and both \fIread\fP and \fIwrite\fP are set to \fB-1\fP
-if the jobserver is non existant, either because the
+If \fB0\fP is returned and both \fIread\fP and \fIwrite\fP are set to \fB-1\fP,
+then the jobserver is non existant, either because the
 \fBMAKEFLAGS\fP environment variable is not defined or because the
 \fB--jobserver-auth\fP (or \fB--jobserver-fds\fP) option is not used
 (see \fBENVIRONMENT\fP in \fBjobserver\fP(7)).
-The \fIdry_run\fP status, if present,
-is always collected.
+The \fIdry_run\fP status is always collected.
 
-The
-.BR jobserver_setenv_ ()
-function overwrites any preexisting jobserver. When \fIread\fP and \fIwrite\fP
-are negative, the jobserver is completely removed from the environment. Note that
-this may not remove the \fBMAKEFLAGS\fP variable from the environment and that
-other options, including the \fIdry_run\fP status, are kept.
+On success, the
+.BR jobserver_write_env_ ()
+function returns a newly allocated buffer containing the environment string.
+On error, \fBNULL\fP is returned and
+\fIerrno\fP is set accordingly.
 
 .SH ERROR
 
 .TP
 .B ENOMEM
-(\fBjobserver_setenv_\fP())
-Not enough memory to add or change the \fBMAKEFLAGS\fP environment variable.
+(\fBjobserver_write_env_\fP())
+Not enough memory to allocate the buffer.
 .TP
 .B EPROTO
-(\fBjobserver_getenv\fP())
-Error while parsing the environment.
+(\fBjobserver_read_env\fP())
+Error while parsing the input.
+.br
+(\fBjobserver_write_env_\fP())
+Error while writing the output.
 
 .SH ATTRIBUTES
 
@@ -81,10 +78,10 @@ lb lb lb
 l l l.
 Interface	Attribute	Value
 T{
-.BR jobserver_getenv_ ()
+.BR jobserver_read_env_ ()
 T}	Thread safety	MT-Safe env, locale
 T{
-.BR jobserver_setenv_ ()
+.BR jobserver_write_env_ ()
 T}	Thread safety	MT-Unsafe const:env
 .TE
 .ad

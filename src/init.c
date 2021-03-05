@@ -10,6 +10,12 @@
 #include "jobserver.h"
 #include "internal.h"
 
+void jobserver_set(struct jobserver * js, int read, int write)
+{
+  js->poll[1].fd = read;
+  js->write = write;
+}
+
 static inline
 int jobserver_init_(struct jobserver * js, size_t size)
 {
@@ -111,7 +117,7 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
   if(jobserver_init_(js, size) == -1)
     goto close;// errno: 0, EMFILE, ENFILE
 
-  if(jobserver_setenv(js) == -1)
+  if(size > 0 && jobserver_setenv(js) == -1)
     goto close;// errno: ENOMEM
 
   return size + 1;

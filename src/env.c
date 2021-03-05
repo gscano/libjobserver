@@ -29,7 +29,6 @@ char const * search_for_options_in_first_word_(char const * env, bool target,
   return env;
 }
 
-static inline
 char const * atofd(char const * str, int * fd)
 {
   if(*str < '0' || *str > '9')
@@ -42,7 +41,7 @@ char const * atofd(char const * str, int * fd)
 
   long int i = 0;
 
-  while('0' < *str && *str < '9')
+  while('0' <= *str && *str <= '9')
     {
       i *= 10;
       i += *str - '0';

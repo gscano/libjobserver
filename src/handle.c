@@ -39,7 +39,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool shared, void * da
   else if(job->pid == 0)
     {
       jobserver_close_(js, shared);
-      exit(func(data));
+      _exit(func(data));
     }
   else
     {

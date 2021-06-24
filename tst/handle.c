@@ -46,14 +46,14 @@ int main()
   char token = 0;
 
   {
-    assert(jobserver_create_n(&js, 1, 't') == 2);
+    assert(jobserver_create_n(&js, 1, 't', false) == 2);
     assert(jobserver_wait_for_job_(&js, &token, false) == -1 && errno == ECHILD);
     assert(jobserver_close(&js) == 0);
   }
 
   {
     struct data data = {1, 1, 1};
-    assert(jobserver_create_n(&js, 2, 't') == 3);
+    assert(jobserver_create_n(&js, 2, 't', false) == 3);
     assert(jobserver_launch_job(&js, 0, true, &data, begin, end) == 0);
     assert(jobserver_wait_for_job_(&js, &token, false) == -1);
     assert(jobserver_close(&js) == -1);
@@ -67,7 +67,7 @@ int main()
   {
     struct data data1 = {2, 1, 1};
     struct data data2 = {3, 3, 2};
-    assert(jobserver_create_n(&js, 3, 't') == 4);
+    assert(jobserver_create_n(&js, 3, 't', false) == 4);
     assert(jobserver_launch_job(&js, 0, true, &data1, begin, end) == 0);
     assert(jobserver_launch_job(&js, 0, true, &data2, begin, end) == 0);
     assert(read(pipefd[0], &token, 1) == 1);
@@ -78,11 +78,12 @@ int main()
     assert(jobserver_wait_for_job_(&js, &token, false) == 0);
     assert(token == 't');
     assert(jobserver_close(&js) == -1 && errno == EIDRM);
+    jobserver_close_(&js, false);
   }
 
   {
     struct data data1 = {4, 1, 1};
-    assert(jobserver_create(&js, "") == 1);
+    assert(jobserver_create(&js, "", false) == 1);
     assert(jobserver_launch_job(&js, 0, true, &data1, begin, end) == 0);
     sleep(3);
     assert(read(pipefd[0], &token, 1) == 1);

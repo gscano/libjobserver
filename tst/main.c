@@ -109,7 +109,7 @@ void connect_to(struct jobserver * js, char * arg)
       else if(errno == ENODEV || errno == EACCES)
 	{
 	  fprintf(stderr, ".\nCreating jobserver ...");
-	  const int number = jobserver_create(js, tokens);
+	  const int number = jobserver_create(js, tokens, false);
 	  assert(number == size + 1);
 	}
       else

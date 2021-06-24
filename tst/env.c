@@ -41,12 +41,16 @@ void write(int id, const char * env_,
 
   if(env == NULL)
     assert(renv == NULL);
-
-  if(strcmp(env, renv) != 0)
+  else
     {
-      fprintf(stderr, "Incorrect environment: '%s' ('%s' expected)\n",
-	      env, renv);
-      assert(false);
+      if(strcmp(env, renv) != 0)
+	{
+	  fprintf(stderr, "Incorrect environment: '%s' ('%s' expected)\n",
+		  env, renv);
+	  assert(false);
+	}
+
+      free(env);
     }
 }
 

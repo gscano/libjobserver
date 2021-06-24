@@ -11,23 +11,7 @@
 #include "internal.h"
 
 static inline
-void jobserver_reset_(struct jobserver * js)
-{
-  js->size = 0;
-  js->has_free_token = false;
-
-  js->current_jobs = 0;
-  js->max_jobs = 0;
-  js->jobs = NULL;
-
-  js->poll[0].fd = -1;
-  js->poll[1].fd = -1;
-
-  js->write = -1;
-}
-
-static inline
-int jobserver_init_(struct jobserver * js, size_t size)
+int jobserver_init_(struct jobserver * js, int size)
 {
   // js->dry_run user controled
 
@@ -43,6 +27,9 @@ int jobserver_init_(struct jobserver * js, size_t size)
 
   js->poll[0].events = POLLIN;
   js->poll[1].events = POLLIN;
+
+  // js->poll[1].fd do not set
+  // js->write      do not set
 
   if(jobserver_handle_sigchld_(SIG_BLOCK, &js->poll[0].fd) == -1)
     return -1;// errno: 0, EMFILE, ENFILE, (ENODEV, ENOMEM)
@@ -92,25 +79,28 @@ int jobserver_reconnect(struct jobserver * js)
 }
 
 static
-int jobserver_create_(struct jobserver * js, char const * tokens, size_t size);
+int jobserver_create_(struct jobserver * js,
+		      char const * tokens, size_t size, bool dry_run);
 
-int jobserver_create(struct jobserver * js, char const * tokens)
+int jobserver_create(struct jobserver * js, char const * tokens, bool dry_run)
 {
-  return jobserver_create_(js, tokens, strlen(tokens));
+  return jobserver_create_(js, tokens, strlen(tokens), dry_run);
 }
 
-int jobserver_create_n(struct jobserver * js, size_t size, char token)
+int jobserver_create_n(struct jobserver * js,
+		       size_t size, char token, bool dry_run)
 {
   char tokens[size];
 
   memset(tokens, token, size);
 
-  return jobserver_create_(js, tokens, size);
+  return jobserver_create_(js, tokens, size, dry_run);
 }
 
-int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
+int jobserver_create_(struct jobserver * js,
+		      char const * tokens, size_t size, bool dry_run)
 {
-  if(size > PIPE_BUF)
+  if(size > PIPE_BUF)// ensure write_to_pipe_() is atomic
     {
       errno = EINVAL;
       return -1;
@@ -118,6 +108,8 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
 
   js->poll[1].fd = -1;
   js->write = -1;
+
+  js->dry_run = dry_run;
 
   if(size > 0)
     {
@@ -129,14 +121,20 @@ int jobserver_create_(struct jobserver * js, char const * tokens, size_t size)
       js->poll[1].fd = pipefds[0];
       js->write = pipefds[1];
 
-      ssize_t size_ = write_to_pipe_(js->write, tokens, size);
-      assert(size_ != -1);
-      assert((size_t)size_ == size);
-      (void)size_;
+      ssize_t const written =  write_to_pipe_(js->write, tokens, size);
+
+      if(written == -1 || (size_t)written < size)
+	{
+	  (void)close(js->poll[1].fd);
+	  (void)close(js->write);
+
+	  errno = EPIPE;
+	  return -1;
+	}
     }
 
   if(jobserver_init_(js, size) == -1)
-    goto close;// errno: 0, EMFILE, ENFILE
+    return -1;// errno: 0, EMFILE, ENFILE
 
   if(size > 0 && jobserver_setenv(js) == -1)
     goto close;// errno: ENOMEM
@@ -153,8 +151,11 @@ void jobserver_close_(struct jobserver * js, bool keep)
 {
   if(!keep)
     {
-      close(js->poll[1].fd);
-      close(js->write);
+      if(js->poll[1].fd != -1)
+	(void)close(js->poll[1].fd);
+
+      if(js->write != -1)
+	(void)close(js->write);
     }
 
   if(js->jobs != NULL)

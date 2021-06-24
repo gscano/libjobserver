@@ -13,7 +13,8 @@ int jobserver_poll_(struct pollfd pollfd[2], int timeout, bool use_pipe)
   if(poll(pollfd, 1 + (pollfd[1].fd != -1 && use_pipe), timeout) == -1)
     return -1;// errno: EINTR, ENOMEM
 
-  return 2 * (pollfd[0].revents & POLLIN) + (pollfd[1].revents & POLLIN);
+  return 2 * ((pollfd[0].revents & POLLIN) == POLLIN)
+    + ((pollfd[1].revents & POLLIN) == POLLIN);
 }
 
 #else // ! USE_SIGNALFD = self pipe trick
@@ -40,7 +41,8 @@ int jobserver_poll_(struct pollfd pollfd[2], int timeout, bool use_pipe)
 	}
     }
 
-  return 2 * (errno == EINTR || pollfd[0].revents & POLLIN) + (pollfd[1].revents & POLLIN);
+  return 2 * (errno == EINTR || ((pollfd[0].revents & POLLIN) == POLLIN))
+	      + ((pollfd[1].revents & POLLIN) == POLLIN);
 }
 
 #endif

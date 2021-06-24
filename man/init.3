@@ -7,27 +7,19 @@ jobserver_connect, jobserver_connect_to, jobserver_reconnect, jobserver_create, 
 
 .B #include <jobserver.h>
 
-.N void jobserver_init(struct jobserver * \fIjs\fP);
-
 .B int jobserver_connect(struct jobserver * \fIjs\fP);
 .br
 .B int jobserver_connect_to(struct jobserver * \fIjs\fP, int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
 .br
 .B int jobserver_reconnect(struct jobserver * \fIjs\fP);
 
-.B int jobserver_create  (struct jobserver * \fIjs\fP, char const * \fItokens\fP);
+.B int jobserver_create  (struct jobserver * \fIjs\fP, char const * \fItokens\fP, bool \fIdry_run\fP);
 .br
-.B int jobserver_create_n(struct jobserver * \fIjs\fP, size_t \fIsize\fP, char \fItoken\fP);
+.B int jobserver_create_n(struct jobserver * \fIjs\fP, size_t \fIsize\fP, char \fItoken\fP, \fIdry_run\fP);
 
 .B int jobserver_close(struct jobserver * \fIjs\fP);
 
 .SH DESCRIPTION
-
-The
-.BR jobserver_init ()
-function initializes the jobserver so that a call to
-.BR jobserver_close ()
-on an unstarted jobserver gracefully returns.
 
 The
 .BR jobserver_connect ()
@@ -48,7 +40,8 @@ The
 .BR jobserver_create ()
 and
 .BR jobserver_create_n ()
-functions create a new jobserver \fIjs\fP and publish it to the environment.
+functions create a new jobserver \fIjs\fP and publish it to the environment
+along with its \fIdry_run\fP status.
 The jobserver is initialized with either a null-terminated word of
 \fItokens\fP or with \fIsize\fP \fItoken\fPs as additional job slots
 to the free token.
@@ -121,6 +114,9 @@ Too many file descriptors for the system.
 .TP
 .B ENOMEM
 Not enough memory to set the environment variable.
+.TP
+.N EPIPE
+Cannot initialize the token pipe.
 
 .SS
 .BR jobserver_close ()

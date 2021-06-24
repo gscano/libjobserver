@@ -60,7 +60,7 @@ void connect_to(struct jobserver * js, char * tokens)
 	{
 	  fprintf(stderr, ".\nCreating jobserver ...");
 
-	  if(jobserver_create_n(js, atoi(tokens), 't') == -1)
+	  if(jobserver_create_n(js, atoi(tokens), 't', false) == -1)
 	    exit(EXIT_FAILURE);
 
 	  fprintf(stderr, " done.\n");

@@ -115,12 +115,12 @@ void test_create()
   js.dry_run = false;
 
   {
-    assert(jobserver_create(&js, "") == 1);
+    assert(jobserver_create(&js, "", false) == 1);
     assert(jobserver_close(&js) == 0);
   }
 
   {
-    assert(jobserver_create(&js, "abcde") == 6);
+    assert(jobserver_create(&js, "abcde", false) == 6);
 
     char buffer[10] = {0};
     assert(read(js.poll[1].fd, buffer, 10) == 5);
@@ -133,7 +133,7 @@ void test_create()
   setenv("MAKEFLAGS", "", 1);
 
   {
-    assert(jobserver_create_n(&js, 4, 'a') == 5);
+    assert(jobserver_create_n(&js, 4, 'a', false) == 5);
 
     char buffer[10] = {0};
     assert(read(js.poll[1].fd, buffer, 10) == 4);

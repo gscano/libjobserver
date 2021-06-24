@@ -1,11 +1,13 @@
 .TH JOBSERVER 3
 
 .SH NAME
-jobserver_connect, jobserver_create, jobserver_create_n, jobserver_close - connect to or create and then quit a jobserver
+jobserver_connect, jobserver_reconnect, jobserver_create, jobserver_create_n, jobserver_close - connect to or create and then quit a jobserver
 
 .SH SYNOPSIS
 
 .B #include <jobserver.h>
+
+.N void jobserver_init(struct jobserver * \fIjs\fP);
 
 .B int jobserver_connect(struct jobserver * \fIjs\fP);
 .br
@@ -18,6 +20,12 @@ jobserver_connect, jobserver_create, jobserver_create_n, jobserver_close - conne
 .B int jobserver_close(struct jobserver * \fIjs\fP);
 
 .SH DESCRIPTION
+
+The
+.BR jobserver_init ()
+function initializes the jobserver so that a call to
+.BR jobserver_close ()
+on an unstarted jobserver gracefully returns.
 
 The
 .BR jobserver_connect ()
@@ -51,8 +59,8 @@ to achieve this.
 
 .SH RETURN VALUE
 
-On success, the \fBjobserver_open\fP() and \fBjobserver_close\fP()
-functions return \fB0\fP.
+On success, the \fBjobserver_connect\fP(), \fBjobserver_reconnect\fP(),
+and \fBjobserver_close\fP() functions return \fB0\fP.
 
 On success, the \fBjobserver_create\fP() and \fBjobserver_create_n\fP() functions
 return the number of possible parallel jobs, that is the number tokens available

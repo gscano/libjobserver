@@ -10,6 +10,19 @@
 #include "jobserver.h"
 #include "internal.h"
 
+void jobserver_init(struct jobserver * js)
+{
+  js->size = 0;
+
+  js->current_jobs = 0;
+  js->max_jobs = 0;
+  js->jobs = NULL;
+
+  js->poll[0].fd = -1;
+  js->poll[1].fd = -1;
+  js->write = -1;
+}
+
 void jobserver_set(struct jobserver * js, int read, int write)
 {
   js->poll[1].fd = read;
@@ -134,6 +147,9 @@ void jobserver_close_(struct jobserver * js, bool keep)
     {
       close(js->poll[1].fd);
       close(js->write);
+
+      js->poll[1].fd = -1;
+      js->write = -1;
     }
 
   if(js->jobs != NULL)

@@ -32,6 +32,7 @@ int jobserver_getenv(struct jobserver * js);
 int jobserver_setenv(struct jobserver const * js);
 int jobserver_unsetenv(struct jobserver const * js);
 
+void jobserver_init(struct jobserver * js);
 void jobserver_set(struct jobserver * js, int read, int write);
 
 int jobserver_connect(struct jobserver * js);

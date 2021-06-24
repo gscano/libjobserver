@@ -51,10 +51,6 @@ sharing the ability to do so with its siblings and parents.
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
-.B int jobserver_read_env_(char const * \fIenv\fP, int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP);
-.br
-.B char * jobserver_write_env_(char const * \fIenv\fP, int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP);
-
 .SS Configuration
 
 A jobserver, either created or joined, shall be stopped immediately
@@ -110,18 +106,6 @@ In particular, the function cleans up the \fIjs\fP data structure
 and resets the signal handler for \fBSIGCHLD\fP to its default value.
 If \fIinherit\fP is true, the jobserver remains available in the child
 but a new local instance has to be created with \fBjobserver_connect\fP(3).
-.PP
-
-.B int jobserver_read_env_(char const * \fIenv\fP, int * \fIread_fd\fP, int * \fIwrite_fd\fP, bool * \fIdry_run\fP);
-
-.IP
-See \fBjobserver_read_\fP(3).
-.PP
-
-.B char * jobserver_write_env_(char const * \fIenv\fP, int \fIread_fd\fP, int \fIwrite_fd\fP, bool \fIdry_run\fP);
-
-.IP
-See \fBjobserver_write_env_\fP(3).
 .PP
 
 .SH ENVIRONMENT

@@ -28,6 +28,11 @@ struct jobserver
 typedef int (*jobserver_callback_t)(void * data);
 typedef void (*jobserver_callback_return_t) (void * data, int status);
 
+int jobserver_read_env(char const * env,
+		       int * read_fd, int * write_fd, bool * dry_run);
+char * jobserver_write_env(char const * env,
+			   int read_fd, int write_fd, bool dry_run);
+
 int jobserver_getenv(struct jobserver * js);
 int jobserver_setenv(struct jobserver const * js);
 int jobserver_unsetenv(struct jobserver const * js);
@@ -52,9 +57,6 @@ int jobserver_clear(struct jobserver * js);
 int jobserver_print(FILE * stream, struct jobserver const * js,
 		    const char * separator, const char * job_separator,
 		    const char * inter_job_separator);
-
-int jobserver_read_env_(char const * env, int * read_fd, int * write_fd, bool * dry_run);
-char * jobserver_write_env_(char const * env, int read_fd, int write_fd, bool dry_run);
 
 void jobserver_close_(struct jobserver * js, bool inherit);
 

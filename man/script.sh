@@ -7,8 +7,8 @@ declare -A pages=(
     ["jobserver_setenv.3"]="env.3"
     ["jobserver_unsetenv.3"]="env.3"
 
-    ["jobserver_read_env_.3"]="env_.3"
-    ["jobserver_write_env_.3"]="env_.3"
+    ["jobserver_read_env.3"]="env_.3"
+    ["jobserver_write_env.3"]="env_.3"
 
     ["jobserver_connect.3"]="init.3"
     ["jobserver_reconnect.3"]="init.3"

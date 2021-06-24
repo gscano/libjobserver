@@ -2,20 +2,21 @@
 
 .SH NAME
 
-jobserver_read_env_, jobserver_write_env_ - manipulate an environment string
+jobserver_read_env, jobserver_write_env - manipulate a jobserver environment string
 
 .SH SYNOPSIS
 
 .B #include <jobserver.h>
 
-.B int jobserver_read_env_(char const * \fIenv\fP, int * \fIread\fP, int * \fIwrite\fP, bool * \fIdry_run\fP);
-.br
-.B char * jobserver_write_env_(char const * \fIenv\fP, int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
+.B int jobserver_read_env(char const * \fIenv\fP, int * \fIread\fP, int * \fIwrite\fP, bool * \fIdry_run\fP);
+
+
+.B char * jobserver_write_env(char const * \fIenv\fP, int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
 
 .SH DESCRIPTION
 
 The
-.BR jobserver_read_env_ ()
+.BR jobserver_read_env ()
 function looks for the
 .I read
 and
@@ -24,7 +25,7 @@ file descriptors of the jobserver token pipe as well as its
 \fIdry_run\fP status in \fIenv\fP.
 
 The
-.BR jobserver_write_env_ ()
+.BR jobserver_write_env ()
 function updates the environment string \fIenv\fP in a newly
 allocated buffer.
 If one of the file descriptors \fIread\fP and \fIwrite\fP is
@@ -36,7 +37,7 @@ The \fIdry_run\fP status is always updated.
 .SH RETURN VALUE
 
 On success, the
-.BR jobserver_read_env_ ()
+.BR jobserver_read_env ()
 function returns \fB0\fP. On error, \fP-1\fP is returned and
 \fIerrno\fP is set accordingly.
 
@@ -44,11 +45,12 @@ If \fB0\fP is returned and both \fIread\fP and \fIwrite\fP are set to \fB-1\fP,
 then the jobserver is non existant, either because the
 \fBMAKEFLAGS\fP environment variable is not defined or because the
 \fB--jobserver-auth\fP (or \fB--jobserver-fds\fP) option is not used
-(see \fBENVIRONMENT\fP in \fBjobserver\fP(7)).
+(see \fBENVIRONMENT\fP in
+.BR jobserver (7).
 The \fIdry_run\fP status is always collected.
 
 On success, the
-.BR jobserver_write_env_ ()
+.BR jobserver_write_env ()
 function returns a newly allocated buffer containing the environment string.
 On error, \fBNULL\fP is returned and
 \fIerrno\fP is set accordingly.
@@ -57,34 +59,15 @@ On error, \fBNULL\fP is returned and
 
 .TP
 .B ENOMEM
-(\fBjobserver_write_env_\fP())
+.BR (jobserver_write_env ())
 Not enough memory to allocate the buffer.
 .TP
 .B EPROTO
-(\fBjobserver_read_env\fP())
+.BR (jobserver_read_env ())
 Error while parsing the input.
 .br
-(\fBjobserver_write_env_\fP())
+.BR (jobserver_write_env ())
 Error while writing the output.
-
-.SH ATTRIBUTES
-
-For an explanation of the terms used in this section, see
-.BR attributes (7).
-.ad l
-.TS
-allbox;
-lb lb lb
-l l l.
-Interface	Attribute	Value
-T{
-.BR jobserver_read_env_ ()
-T}	Thread safety	MT-Safe env, locale
-T{
-.BR jobserver_write_env_ ()
-T}	Thread safety	MT-Unsafe const:env
-.TE
-.ad
 
 .SH SEE ALSO
 

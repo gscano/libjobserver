@@ -9,8 +9,9 @@
 #include "config.h"
 
 static inline
-char const * search_for_options_in_first_word_(char const * env, bool target,
-					       bool * dry_run)
+char const * jobserver_search_for_options_in_first_word_(char const * env,
+							 bool target,
+							 bool * dry_run)
 {
   if(env[0] != '-')
     {
@@ -29,7 +30,7 @@ char const * search_for_options_in_first_word_(char const * env, bool target,
   return env;
 }
 
-char const * atofd(char const * str, int * fd)
+char const * jobserver_atofd(char const * str, int * fd)
 {
   if(*str < '0' || *str > '9')
     {
@@ -56,13 +57,15 @@ char const * atofd(char const * str, int * fd)
   return str;
 }
 
-int jobserver_read_env_(char const * env, int * read_fd, int * write_fd, bool * dry_run)
+int jobserver_read_env(char const * env,
+		       int * read_fd, int * write_fd,
+		       bool * dry_run)
 {
   *read_fd = *write_fd = -1;
   *dry_run = false;
 
   if(env == NULL) return 0;
-  env = search_for_options_in_first_word_(env, true, dry_run);
+  env = jobserver_search_for_options_in_first_word_(env, true, dry_run);
 
   env = strstr(env, MAKEFLAGS_JOBSERVER);
   if(env == NULL) return 0;
@@ -70,13 +73,13 @@ int jobserver_read_env_(char const * env, int * read_fd, int * write_fd, bool * 
   if(env == NULL) goto error;
   ++env;
 
-  env = atofd(env, read_fd);
+  env = jobserver_atofd(env, read_fd);
   if(env == NULL)
     goto error;
 
   if(*env++ != ',') goto error;
 
-  env = atofd(env, write_fd);
+  env = jobserver_atofd(env, write_fd);
   if(env == NULL)
     goto error;
 
@@ -89,14 +92,16 @@ int jobserver_read_env_(char const * env, int * read_fd, int * write_fd, bool * 
   return -1;
 }
 
-char * jobserver_write_env_(char const * env, int read_fd, int write_fd, bool dry_run)
+char * jobserver_write_env(char const * env,
+			   int read_fd, int write_fd,
+			   bool dry_run)
 {
   char const * before, * j, * fds, * after, * end;
 
   if(env == NULL) env = before = j = fds = after = end = "";
   else
     {
-      before = search_for_options_in_first_word_(env, false, &dry_run);
+      before = jobserver_search_for_options_in_first_word_(env, false, &dry_run);
 
       j = strstr(before, "-j");
 
@@ -151,7 +156,9 @@ char * jobserver_write_env_(char const * env, int read_fd, int write_fd, bool dr
     && jobserver_fds_size > 0
     && *after != ' ';
 
-  const int size = word_size + first_space + (j - before) + jobserver_fds_size + second_space + (end - after);
+  const int size = word_size
+    + first_space + (j - before) + jobserver_fds_size
+    + second_space + (end - after);
   char * buffer = malloc((size + 1) * sizeof(char));
 
   if(buffer == NULL)
@@ -177,16 +184,16 @@ char * jobserver_write_env_(char const * env, int read_fd, int write_fd, bool dr
 
 int jobserver_getenv(struct jobserver * js)
 {
-  return jobserver_read_env_(getenv(MAKEFLAGS),
-			     &js->poll[1].fd, &js->write,
-			     &js->dry_run);
+  return jobserver_read_env(getenv(MAKEFLAGS),
+			    &js->poll[1].fd, &js->write,
+			    &js->dry_run);
 }
 
 int jobserver_setenv_(int read_fd, int write_fd, bool dry_run)
 {
-  char * const buffer = jobserver_write_env_(getenv(MAKEFLAGS),
-					     read_fd, write_fd,
-					     dry_run);
+  char * const buffer = jobserver_write_env(getenv(MAKEFLAGS),
+					    read_fd, write_fd,
+					    dry_run);
 
   if(buffer == NULL)
     return -1;// errno: ENOMEM

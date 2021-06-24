@@ -7,7 +7,9 @@
 #include <stdlib.h> // EXIT_SUCCESS
 #include <string.h> // strcmp()
 
-void read(int id, const char * env, int read, int write, bool dry_run, int ret)
+void read(int id, const char * env,
+	  int read, int write, bool dry_run,
+	  int ret)
 {
   printf("Test #%d\n", id);
 
@@ -15,7 +17,7 @@ void read(int id, const char * env, int read, int write, bool dry_run, int ret)
   int write_;
   bool dry_run_;
 
-  int status = jobserver_read_env_(env, &read_, &write_, &dry_run_);
+  int status = jobserver_read_env(env, &read_, &write_, &dry_run_);
 
   if(status != ret)
     {
@@ -35,7 +37,7 @@ void write(int id, const char * env_,
 {
   printf("Test #%d\n", id);
 
-  char * env = jobserver_write_env_(env_, read, write, dry_run);
+  char * env = jobserver_write_env(env_, read, write, dry_run);
 
   if(env == NULL)
     assert(renv == NULL);

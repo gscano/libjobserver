@@ -57,17 +57,19 @@ On error, \fBNULL\fP is returned and
 
 .SH ERROR
 
+.SS
+.BR jobserver_write_env ()
 .TP
 .B ENOMEM
-.BR (jobserver_write_env ())
 Not enough memory to allocate the buffer.
 .TP
 .B EPROTO
-.BR (jobserver_read_env ())
-Error while parsing the input.
-.br
-.BR (jobserver_write_env ())
 Error while writing the output.
+.SS
+.BR jobserver_read_env ()
+.TP
+.B EPROTO
+Error while parsing the input.
 
 .SH SEE ALSO
 

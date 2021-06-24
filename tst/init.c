@@ -50,16 +50,6 @@ void test_connect()
     {
       struct jobserver js;
 
-      snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], pipefd[1]);
-      setenv("MAKEFLAGS", env, 1);
-
-      assert(jobserver_connect(&js) == 0);
-      assert(jobserver_close(&js) == 0);
-    }
-
-    {
-      struct jobserver js;
-
       snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], -1);
       setenv("MAKEFLAGS", env, 1);
 
@@ -83,8 +73,18 @@ void test_connect()
       snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], pipefd[1]);
       setenv("MAKEFLAGS", env, 1);
 
-      assert(close(pipefd[0]) != -1);
-      assert(close(pipefd[1]) != -1);
+      assert(jobserver_connect(&js) == 0);
+      assert(jobserver_close(&js) == 0);
+    }
+
+    {
+      struct jobserver js;
+
+      snprintf(env, 32, ""MAKEFLAGS_JOBSERVER"=%d,%d", pipefd[0], pipefd[1]);
+      setenv("MAKEFLAGS", env, 1);
+
+      assert(close(pipefd[0]) == -1);
+      assert(close(pipefd[1]) == -1);
 
       assert(jobserver_connect(&js) == -1);
       assert(errno == EACCES);

@@ -38,9 +38,9 @@ int jobserver_setenv(struct jobserver const * js);
 int jobserver_unsetenv(struct jobserver const * js);
 
 void jobserver_init(struct jobserver * js);
-void jobserver_set(struct jobserver * js, int read, int write);
 
 int jobserver_connect(struct jobserver * js);
+int jobserver_connect_to(struct jobserver * js, int read, int write, bool dry_run);
 int jobserver_reconnect(struct jobserver * js);
 int jobserver_create(struct jobserver * js, char const * tokens);
 int jobserver_create_n(struct jobserver * js, size_t size, char token);

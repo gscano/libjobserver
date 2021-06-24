@@ -10,9 +10,11 @@
 #include "jobserver.h"
 #include "internal.h"
 
-void jobserver_init(struct jobserver * js)
+static inline
+void jobserver_reset_(struct jobserver * js)
 {
   js->size = 0;
+  js->has_free_token = false;
 
   js->current_jobs = 0;
   js->max_jobs = 0;
@@ -20,31 +22,30 @@ void jobserver_init(struct jobserver * js)
 
   js->poll[0].fd = -1;
   js->poll[1].fd = -1;
-  js->write = -1;
-}
 
-void jobserver_set(struct jobserver * js, int read, int write)
-{
-  js->poll[1].fd = read;
-  js->write = write;
+  js->write = -1;
 }
 
 static inline
 int jobserver_init_(struct jobserver * js, size_t size)
 {
+  // js->dry_run user controled
+
   js->stopped = -1;
   js->status = 0;
 
   js->size = size;
   js->has_free_token = true;
 
-  js->current_jobs = js->max_jobs = 0;
+  js->current_jobs = 0;
+  js->max_jobs = 0;
   js->jobs = NULL;
 
-  js->poll[0].events = js->poll[1].events = POLLIN;
+  js->poll[0].events = POLLIN;
+  js->poll[1].events = POLLIN;
 
   if(jobserver_handle_sigchld_(SIG_BLOCK, &js->poll[0].fd) == -1)
-    return -1;// errno: EMFILE, ENFILE, (ENODEV, ENOMEM)
+    return -1;// errno: 0, EMFILE, ENFILE, (ENODEV, ENOMEM)
 
   return 0;
 }
@@ -55,6 +56,16 @@ int jobserver_connect(struct jobserver * js)
     return -1;// errno: EPROTO
   else
     return jobserver_reconnect(js);
+}
+
+int jobserver_connect_to(struct jobserver * js, int read, int write, bool dry_run)
+{
+  js->dry_run = dry_run;
+
+  js->poll[1].fd = read;
+  js->write = write;
+
+  return jobserver_reconnect(js);
 }
 
 int jobserver_reconnect(struct jobserver * js)
@@ -69,18 +80,15 @@ int jobserver_reconnect(struct jobserver * js)
       return -1;
     }
 
-  if(fcntl(js->poll[1].fd, F_GETFD) == -1) goto access_error;
-  if(fcntl(js->write, F_GETFD) == -1) goto access_error;
+  if(fcntl(js->poll[1].fd, F_GETFD) == -1
+     || fcntl(js->write, F_GETFD) == -1)
+    {
+      errno = EACCES;// Missing a leading '+'
 
-  if(jobserver_init_(js, 0) == -1)
-    return -1;// errno: 0, EMFILE, ENFILE
+      return -1;
+    }
 
-  return 0;
-
- access_error:
-  errno = EACCES;// Missing a leading '+'
-
-  return -1;
+  return jobserver_init_(js, 0);// errno: 0, EMFILE, ENFILE
 }
 
 static
@@ -147,15 +155,12 @@ void jobserver_close_(struct jobserver * js, bool keep)
     {
       close(js->poll[1].fd);
       close(js->write);
-
-      js->poll[1].fd = -1;
-      js->write = -1;
     }
 
   if(js->jobs != NULL)
     free(js->jobs);
 
-  jobserver_handle_sigchld_(SIG_UNBLOCK, &js->poll[0].fd);
+  (void)jobserver_handle_sigchld_(SIG_UNBLOCK, &js->poll[0].fd);
 }
 
 int jobserver_close(struct jobserver * js)
@@ -180,14 +185,14 @@ int jobserver_close(struct jobserver * js)
       char tokens[js->size];
       size_t size = read(js->poll[1].fd, tokens, js->size);
 
-      jobserver_close_(js, false);
-
       if(size < js->size)
 	{
 	  errno = EIDRM;
 	  return -1;
 	}
     }
+
+  jobserver_close_(js, false);
 
   return 0;
 }

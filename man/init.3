@@ -1,7 +1,7 @@
 .TH JOBSERVER 3
 
 .SH NAME
-jobserver_connect, jobserver_reconnect, jobserver_create, jobserver_create_n, jobserver_close - connect to or create and then quit a jobserver
+jobserver_connect, jobserver_connect_to, jobserver_reconnect, jobserver_create, jobserver_create_n, jobserver_close - connect to or create and then quit a jobserver
 
 .SH SYNOPSIS
 
@@ -10,6 +10,8 @@ jobserver_connect, jobserver_reconnect, jobserver_create, jobserver_create_n, jo
 .N void jobserver_init(struct jobserver * \fIjs\fP);
 
 .B int jobserver_connect(struct jobserver * \fIjs\fP);
+.br
+.B int jobserver_connect_to(struct jobserver * \fIjs\fP, int \fIread\fP, int \fIwrite\fP, bool \fIdry_run\fP);
 .br
 .B int jobserver_reconnect(struct jobserver * \fIjs\fP);
 
@@ -30,6 +32,11 @@ on an unstarted jobserver gracefully returns.
 The
 .BR jobserver_connect ()
 function tries to connect to an environment-defined jobserver \fIjs\fP.
+.br
+The
+.BR jobserver_connect_to()
+function tries to connect to a jobserver \fIjs\fP based on the token pipe
+file descriptors \fIread\fP and \fIwrite\fP with the given \fIdry_run\fP status.
 .br
 The
 .BR jobserver_reconnect()
@@ -59,8 +66,8 @@ to achieve this.
 
 .SH RETURN VALUE
 
-On success, the \fBjobserver_connect\fP(), \fBjobserver_reconnect\fP(),
-and \fBjobserver_close\fP() functions return \fB0\fP.
+On success, the \fBjobserver_connect\fP(), \fBjobserver_connect_to\fP()
+\fBjobserver_reconnect\fP(), and \fBjobserver_close\fP() functions return \fB0\fP.
 
 On success, the \fBjobserver_create\fP() and \fBjobserver_create_n\fP() functions
 return the number of possible parallel jobs, that is the number tokens available
@@ -77,7 +84,9 @@ On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
 (Linux only)
 The signalfd file descriptor could not be created.
 
-.SS \fBjobserver_connect\fP() and \fBjobserver_reconnect\fP()
+.SS \fBjobserver_connect\fP()
+.SS \fBjobserver_connect_to\fP()
+.SS \fBjobserver_reconnect\fP()
 .TP
 .B EACCES
 The jobserver pipe is closed because the current process was spawned
@@ -96,7 +105,10 @@ No jobserver found.
 (\fBjobserver_connect\fP() only)
 Error while parsing the environment.
 
-.SS \fBjobserver_create\fP() and \fBjobserver_create_n\fP()
+.SS
+.BR jobserver_create ()
+.SS
+.BR jobserver_create_n ()
 .TP
 .B EINVAL
 The number of tokens in the pipe exceeds \fBPIPE_BUF\fP.
@@ -110,7 +122,8 @@ Too many file descriptors for the system.
 .B ENOMEM
 Not enough memory to set the environment variable.
 
-.SS \fBjobserver_close\fP()
+.SS
+.BR jobserver_close ()
 .TP
 .B EAGAIN
 Cannot count tokens, call \fPjobserver_wait\fP(3) and try again.

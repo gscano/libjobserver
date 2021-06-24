@@ -47,8 +47,6 @@ sharing the ability to do so with its siblings and parents.
 .br
 .B typedef void (*jobserver_callback_return_t) (void * \fIdata\fP, int \fIstatus\fP);
 
-.B void jobserver_set(struct jobserver * \fIjs\fP, int \fIread\fP, int \fIwrite\fP);
-
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
 .SS Configuration
@@ -89,13 +87,6 @@ the new process, including the signal handler. You might want to
 call \fBjobserver_close\fP(3) or \fBjobserver_close_\fP().
 
 .SS Internal functions
-
-.B void jobserver_set(struct jobserver * \fIjs\fP, int \fIread\fP, int \fIwrite\fP);
-
-.IP
-The \fBjobserver_set\fP() function sets the \fIread\fP and \fIwrite\fP
-jobserver pipe file descriptors.
-.PP
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
@@ -256,6 +247,7 @@ int main(int argc, char ** argv)
 .BR jobserver_clear (3),
 .BR jobserver_collect (3),
 .BR jobserver_connect (3),
+.BR jobserver_connect_to (3),
 .BR jobserver_close (3),
 .BR jobserver_create (3),
 .BR jobserver_create_n (3),

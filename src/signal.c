@@ -30,7 +30,8 @@ int jobserver_handle_sigchld_(int how, int * fd)
     }
   else // SIG_UNBLOCK
     {
-      close(*fd);
+      (void)close(*fd);
+      *fd = -1;
     }
 
   _(sigprocmask(how, &sigchld, NULL));
@@ -55,7 +56,7 @@ void jobserver_read_sigchld_(int fd)
 #include <fcntl.h> // fcntl(), O_NONBLOCK, O_CLOEXEC
 #include <unistd.h> // close(), pipe(), write()
 
-void fcntl_set_nonblock(int fd)
+void jobserver_fcntl_set_nonblock_(int fd)
 {
   // Local to this process: EACCES and EAGAIN not possible
   while(fcntl(fd, F_SETFL, O_NONBLOCK) == -1
@@ -63,15 +64,16 @@ void fcntl_set_nonblock(int fd)
     continue;
 }
 
-int self_pipe[2] = {-1, -1};
+static int jobserver_self_pipe[2] = {-1, -1};
+static struct sigaction jobserver_sigchld_oldact;
 
-void signal_handler(int signal)
+void jobserver_signal_handler_(int signal)
 {
   (void)signal;
 
   int error = errno;
 
-  if(write(self_pipe[1], ".", sizeof(char)) == -1)
+  if(write(jobserver_self_pipe[1], ".", sizeof(char)) == -1)
     {
       assert("Pipe full");
       errno = error;
@@ -82,36 +84,35 @@ int jobserver_handle_sigchld_(int how, int * fd)
 {
   if(how == SIG_BLOCK)
     {
-      if(self_pipe[0] == -1)
+      if(jobserver_self_pipe[0] == -1)
 	{
-	  if(pipe(self_pipe) == -1)
+	  if(pipe(jobserver_self_pipe) == -1)
 	    return -1;// errno: EMFILE, ENFILE
 
-	  fcntl_set_nonblock(self_pipe[0]);
-	  fcntl_set_nonblock(self_pipe[1]);
+	  jobserver_fcntl_set_nonblock_(jobserver_self_pipe[0]);
+	  jobserver_fcntl_set_nonblock_(jobserver_self_pipe[1]);
 	}
 
       struct sigaction action;
-      action.sa_handler = signal_handler;
+      action.sa_handler = jobserver_signal_handler_;
       _(sigemptyset(&action.sa_mask));
       _(sigaddset(&action.sa_mask, SIGCHLD));
       action.sa_flags = SA_NOCLDSTOP;
-      _(sigaction(SIGCHLD, &action, NULL));
+      _(sigaction(SIGCHLD, &action, &jobserver_sigchld_oldact));
 
-      *fd = self_pipe[0];
+      *fd = jobserver_self_pipe[0];
     }
   else // SIG_UNBLOCK
     {
-      struct sigaction action;
-      action.sa_handler = SIG_DFL;
-      _(sigemptyset(&action.sa_mask));
-      action.sa_flags = 0;
-      _(sigaction(SIGCHLD, &action, NULL));
+      _(sigaction(SIGCHLD, &jobserver_sigchld_oldact, NULL));
 
-      close(self_pipe[0]);
-      close(self_pipe[1]);
+      (void)close(jobserver_self_pipe[0]);
+      (void)close(jobserver_self_pipe[1]);
 
-      self_pipe[0] = self_pipe[1] = -1;
+      jobserver_self_pipe[0] = -1;
+      jobserver_self_pipe[1] = -1;
+
+      *fd = -1;
     }
 
   return 0;

@@ -7,8 +7,11 @@ struct jobserver_job
 {
   char token;
   pid_t pid;
+
   jobserver_callback_return_t done;
+
   void * data;
+  size_t id;
 };
 
 // internal.c

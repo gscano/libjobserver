@@ -37,6 +37,7 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 {
   int size = fprintf(stream,
 		     "dry run: %d" "%s"
+		     "anchor: %p" "%s"
 		     "stopped: %d" "%s"
 		     "read: %d" "%s"
 		     "write: %d" "%s"
@@ -44,6 +45,7 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		     "has-free-token: %d" "%s"
 		     "jobs: %zu",
 		     js->dry_run, separator,
+		     js->anchor, separator,
 		     js->stopped, separator,
 		     js->poll[1].fd, separator,
 		     js->write, separator,

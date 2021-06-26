@@ -17,8 +17,10 @@ struct data
   char * arg;
 };
 
-int test(void * data_)
+int test(void * anchor, void * data_)
 {
+  (void)anchor;
+
   struct data * data = data_;
 
   fprintf(stdout, "Launching job %s '%s  %s'.\n",
@@ -61,8 +63,10 @@ int test(void * data_)
   return 0;
 }
 
-void end(void * data_, int status)
+void end(void * anchor, void * data_, int status)
 {
+  (void)anchor;
+
   struct data * data = data_;
 
   fprintf(stdout, "Job %s '%s  %s' collected with status: %d\n",
@@ -175,7 +179,7 @@ int main(int argc, char ** argv)
   prepare_jobs(jobs, argc - shift, argv[2], argv + shift);
 
   for(int i = 0; i < argc - shift; ++i)
-    assert(jobserver_launch_job(&js, -1, true, &jobs[i], test, end) == 0);
+    assert(jobserver_launch_job(&js, -1, true, test, &jobs[i], end, &jobs[i]) == 0);
 
  collect:;
 

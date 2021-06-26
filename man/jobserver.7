@@ -33,6 +33,8 @@ sharing the ability to do so with its siblings and parents.
 .in +0.5i
 .br
 .B bool \fIdry_run\fP;
+.br
+.B void * \fIanchor\fP;
 
 .B pid_t \fIstopped\fP;
 .br
@@ -43,9 +45,9 @@ sharing the ability to do so with its siblings and parents.
 .in
 };
 
-.B typedef int (*jobserver_callback_t)(void * \fIdata\fP);
+.B typedef int (*jobserver_callback_t)(void * \fIanchor\fP, void * \fIdata\fP);
 .br
-.B typedef void (*jobserver_callback_return_t) (void * \fIdata\fP, int \fIstatus\fP);
+.B typedef void (*jobserver_callback_return_t) (void * \fIanchor\fP, void * \fIdata\fP, int \fIstatus\fP);
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 
@@ -96,7 +98,7 @@ forking manually in order to close jobserver \fIjs\fP in the child.
 In particular, the function cleans up the \fIjs\fP data structure
 and resets the signal handler for \fBSIGCHLD\fP to its default value.
 If \fIinherit\fP is true, the jobserver remains available in the child
-but a new local instance has to be created with \fBjobserver_connect\fP(3).
+but a new local instance has to be created with \fBjobserver_reconnect\fP(3).
 .PP
 
 .SH ENVIRONMENT

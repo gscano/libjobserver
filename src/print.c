@@ -12,7 +12,7 @@ int jobserver_print_job_(FILE * stream, struct jobserver_job job, const char * s
 		 "data: %p",
 		 job.token, separator,
 		 job.pid, separator,
-		 job.done, separator,
+		 job.exit, separator,
 		 job.data);
 }
 

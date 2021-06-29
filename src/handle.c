@@ -9,8 +9,8 @@
 #include "internal.h"
 
 int jobserver_launch_job(struct jobserver * js, int wait, bool shared,
-			 jobserver_callback_t func, void * init,
-			 jobserver_callback_return_t done, void * data)
+			 jobserver_main_callback_t main, void * init,
+			 jobserver_exit_callback_t exit, void * data)
 {
   char token;
   int status = acquire_jobserver_token_(js, wait, &token);
@@ -40,12 +40,12 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool shared,
   else if(job->pid == 0)
     {
       jobserver_close_(js, shared);
-      _exit(func(js->anchor, init));
+      _exit(main(js->anchor, init));
     }
   else
     {
       job->token = token;
-      job->done = done;
+      job->exit = exit;
       job->data = data;
 
       js->current_jobs++;
@@ -75,7 +75,7 @@ void jobserver_terminate_job_(struct jobserver * js, struct jobserver_job * job,
 {
   assert(job != NULL);
 
-  job->done(js->anchor, job->data, status);
+  job->exit(js->anchor, job->data, status);
 
   if(token == NULL)
     {

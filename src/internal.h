@@ -8,7 +8,7 @@ struct jobserver_job
   char token;
   pid_t pid;
 
-  jobserver_callback_return_t done;
+  jobserver_exit_callback_t exit;
 
   void * data;
   size_t id;

@@ -45,9 +45,9 @@ sharing the ability to do so with its siblings and parents.
 .in
 };
 
-.B typedef int (*jobserver_callback_t)(void * \fIanchor\fP, void * \fIdata\fP);
+.B typedef int (*jobserver_main_callback_t)(void * \fIanchor\fP, void * \fIdata\fP);
 .br
-.B typedef void (*jobserver_callback_return_t) (void * \fIanchor\fP, void * \fIdata\fP, int \fIstatus\fP);
+.B typedef void (*jobserver_exit_callback_t) (void * \fIanchor\fP, void * \fIdata\fP, int \fIstatus\fP);
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 

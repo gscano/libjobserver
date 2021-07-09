@@ -109,18 +109,11 @@ int jobserver_terminate_job(struct jobserver * js, pid_t pid, int status)
   return 0;
 }
 
-int jobserver_clear(struct jobserver * js)
+void jobserver_clear(struct jobserver * js)
 {
+  for(unsigned int i = 0; i < js->current_jobs; ++i)
+    (void)kill(js->jobs[i].pid, SIGKILL);
+
   while(js->current_jobs > 0)
-    {
-      struct jobserver_job * job = &js->jobs[js->current_jobs - 1];
-
-      if(kill(job->pid, SIGKILL) == -1)
-	return js->current_jobs;
-
-      if(jobserver_wait_for_job_(js, NULL, false) == -1)
-	return js->current_jobs;
-    }
-
-  return 0;
+    (void)jobserver_wait_for_job_(js, NULL, false);
 }

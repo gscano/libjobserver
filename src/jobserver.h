@@ -52,7 +52,7 @@ int jobserver_terminate_job(struct jobserver * js, pid_t pid, int status);
 
 int jobserver_wait(struct jobserver * js, int timeout);
 int jobserver_collect(struct jobserver * js, int timeout);
-int jobserver_clear(struct jobserver * js);
+void jobserver_clear(struct jobserver * js);
 
 int jobserver_print(FILE * stream, struct jobserver const * js,
 		    const char * separator, const char * job_separator,

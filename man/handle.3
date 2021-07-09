@@ -14,7 +14,7 @@ jobserver_launch_job, jobserver_clear - spawn a job or clear the jobserver
 
 .B int jobserver_launch_job(struct jobserver * \fIjs\fP, int \fIwait\fP, bool \fIshared\fP, jobserver_main_callback_t \fImain\fP, void * \fIinit\fP, jobserver_exit_callback_t \fIexit\fP, void * \fIdata\fP);
 .br
-.B int jobserver_clear(struct jobserver * \fIjs\fP);
+.B void jobserver_clear(struct jobserver * \fIjs\fP);
 
 .SH DESCRIPTION
 
@@ -54,7 +54,7 @@ function kills all remaining jobs of jobserver \fIjs\fP.
 
 .SH RETURN VALUE
 
-On success, \fBjobserver_launch_job\fP() and \fBjobserver_clear\fP() return
+On success, \fBjobserver_launch_job\fP() returns
 \fB0\fP. On error, \fB-1\fP is returned and \fIerrno\fP is set accordingly.
 
 .SH ERROR

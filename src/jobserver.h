@@ -10,6 +10,7 @@
 struct jobserver
 {
   bool dry_run;
+  bool is_connected;
 
   pid_t stopped;
   int status;

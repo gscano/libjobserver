@@ -37,6 +37,11 @@ int jobserver_init_(struct jobserver * js, int size)
   return 0;
 }
 
+bool jobserver_is_connected_(struct jobserver * js)
+{
+  return js->poll[0].fd >= 0;
+}
+
 int jobserver_connect(struct jobserver * js)
 {
   if(jobserver_getenv(js) == -1)
@@ -149,6 +154,9 @@ int jobserver_create_(struct jobserver * js,
 
 void jobserver_close_(struct jobserver * js, bool keep)
 {
+  if(!jobserver_is_connected_(js))
+    return;
+
   if(!keep)
     {
       if(js->poll[1].fd != -1)
@@ -166,6 +174,12 @@ void jobserver_close_(struct jobserver * js, bool keep)
 
 int jobserver_close(struct jobserver * js)
 {
+  if(!jobserver_is_connected_(js))
+    {
+      errno = ENOTCONN;
+      return -1;
+    }
+
   if(js->current_jobs > 0)
     {
       errno = EBUSY;

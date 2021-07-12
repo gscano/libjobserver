@@ -8,12 +8,14 @@ int jobserver_print_job_(FILE * stream, struct jobserver_job job, const char * s
   return fprintf(stream,
 		 "token: '%c'" "%s"
 		 "pid: %d" "%s"
-		 "done: %p" "%s"
-		 "data: %p",
+		 "exit: %p" "%s"
+		 "data: %p" "%s"
+		 "id: %zu",
 		 job.token, separator,
 		 job.pid, separator,
 		 job.exit, separator,
-		 job.data);
+		 job.data, separator,
+		 job.id);
 }
 
 int jobserver_print_jobs_(FILE * stream, struct jobserver_job const * jobs, size_t size,
@@ -37,7 +39,6 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 {
   int size = fprintf(stream,
 		     "dry run: %d" "%s"
-		     "anchor: %p" "%s"
 		     "stopped: %d" "%s"
 		     "read: %d" "%s"
 		     "write: %d" "%s"
@@ -45,7 +46,6 @@ int jobserver_print(FILE * stream, struct jobserver const * js,
 		     "has-free-token: %d" "%s"
 		     "jobs: %zu",
 		     js->dry_run, separator,
-		     js->anchor, separator,
 		     js->stopped, separator,
 		     js->poll[1].fd, separator,
 		     js->write, separator,

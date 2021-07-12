@@ -17,9 +17,9 @@ struct data
   char * arg;
 };
 
-int test(void * anchor, void * data_)
+int test(void * data_, size_t id)
 {
-  (void)anchor;
+  (void)id;
 
   struct data * data = data_;
 
@@ -63,9 +63,9 @@ int test(void * anchor, void * data_)
   return 0;
 }
 
-void end(void * anchor, void * data_, int status)
+void end(void * data_, size_t id, int status)
 {
-  (void)anchor;
+  (void)id;
 
   struct data * data = data_;
 
@@ -179,7 +179,7 @@ int main(int argc, char ** argv)
   prepare_jobs(jobs, argc - shift, argv[2], argv + shift);
 
   for(int i = 0; i < argc - shift; ++i)
-    assert(jobserver_launch_job(&js, -1, true, test, &jobs[i], end, &jobs[i]) == 0);
+    assert(jobserver_launch_job(&js, -1, true, &jobs[i], i, test, end) == 0);
 
  collect:;
 

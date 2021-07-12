@@ -8,11 +8,11 @@ jobserver_launch_job, jobserver_clear - spawn a job or clear the jobserver
 
 .B #include <jobserver.h>
 
-.B typedef int (*jobserver_main_callback_t)(void * \fIanchor\fP, void * \fIdata\fP);
+.B typedef int (*jobserver_main_callback_t)(void * \fIdata\fP, size_t \fIid\fP);
 .br
-.B typedef void (*jobserver_exit_callback_t) (void * \fIanchor\fP, void * \fIdata\fP, int \fIstatus\fP);
+.B typedef void (*jobserver_exit_callback_t)(void * \fIdata\fP, size_t \fIid\fP, int \fIstatus\fP);
 
-.B int jobserver_launch_job(struct jobserver * \fIjs\fP, int \fIwait\fP, bool \fIshared\fP, jobserver_main_callback_t \fImain\fP, void * \fIinit\fP, jobserver_exit_callback_t \fIexit\fP, void * \fIdata\fP);
+.B int jobserver_launch_job(struct jobserver * \fIjs\fP, int \fIwait\fP, bool \fIshared\fP, void * \fIdata\fP, size_t \fIid\fP, jobserver_main_callback_t \fImain\fP, jobserver_exit_callback_t \fIexit\fP);
 .br
 .B void jobserver_clear(struct jobserver * \fIjs\fP);
 
@@ -28,24 +28,17 @@ is later collected by \fBjobserver_terminate_job\fP(3), \fBjobserver_wait\fP(3),
 \fBjobserver_collect\fP(3), or \fBjobserver_clear\fP().
 
 Because the jobserver might not have any tokens left to start a new job,
-the function might \fIwait\fP for a token to become available (see
-.BR poll(2)
-for the different types of value it may take).
+the function might \fIwait\fP (as specified in
+.BR poll(2) )
+for a token to become available.
 
 Jobserver \fIjs\fP could be \fIshared\fP with the new
 process such that it would be possible to use \fBjobserver_connect\fP(3)
 and access jobserver \fIjs\fP in the new process.
 
-\fIanchor\fP is passed as-is from the jobserver \fIjs\fP
-structure (see
-.BR jobserver (7).
-.br
-\fIinit\fP is passed to \fImain\fP.
-.br
-\fIdata\fP is passed to \fIexit\fP.
-.br
-The \fBjobserver_exit_callback_t\fP receives the exit status of the spwaned process as
-specified in
+Arguments \fIdata\fP and \fIid\fP are passed to \fImain\fP and \fIexit\fP,
+the latter additionaly receiving the \fIexit\fP status of
+the spwaned process as specified in
 .BR wait (2).
 
 The

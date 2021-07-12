@@ -16,9 +16,9 @@ struct data
 
 int pipefd[2];
 
-int begin(void * anchor, void * data_)
+int begin(void * data_, size_t id)
 {
-  (void)anchor;
+  (void)id;
 
   struct data * data = data_;
 
@@ -31,9 +31,9 @@ int begin(void * anchor, void * data_)
   return data->ret;
 }
 
-void end(void * anchor, void * data_, int status)
+void end(void * data_, size_t id, int status)
 {
-  (void)anchor;
+  (void)id;
 
   struct data * data = data_;
 
@@ -58,7 +58,7 @@ int main()
   {
     struct data data = {1, 1, 1};
     assert(jobserver_create_n(&js, 2, 't', false) == 3);
-    assert(jobserver_launch_job(&js, 0, true, begin, &data, end, &data) == 0);
+    assert(jobserver_launch_job(&js, 0, true, &data, 0, begin, end) == 0);
     assert(jobserver_wait_for_job_(&js, &token, false) == -1);
     assert(jobserver_close(&js) == -1);
     assert(read(pipefd[0], &token, 1) == 1);
@@ -72,8 +72,8 @@ int main()
     struct data data1 = {2, 1, 1};
     struct data data2 = {3, 3, 2};
     assert(jobserver_create_n(&js, 3, 't', false) == 4);
-    assert(jobserver_launch_job(&js, 0, true, begin, &data1, end, &data1) == 0);
-    assert(jobserver_launch_job(&js, 0, true, begin, &data2, end, &data2) == 0);
+    assert(jobserver_launch_job(&js, 0, true, &data1, 0, begin, end) == 0);
+    assert(jobserver_launch_job(&js, 0, true, &data2, 1, begin, end) == 0);
     assert(read(pipefd[0], &token, 1) == 1);
     sleep(2);
     assert(jobserver_wait_for_job_(&js, &token, false) == 0);
@@ -88,7 +88,7 @@ int main()
   {
     struct data data1 = {4, 1, 1};
     assert(jobserver_create(&js, "", false) == 1);
-    assert(jobserver_launch_job(&js, 0, true, begin, &data1, end, &data1) == 0);
+    assert(jobserver_launch_job(&js, 0, true, &data1, 0, begin, end) == 0);
     sleep(3);
     assert(read(pipefd[0], &token, 1) == 1);
     assert(jobserver_wait_for_job_(&js, &token, false) == 0);

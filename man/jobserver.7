@@ -33,8 +33,6 @@ sharing the ability to do so with its siblings and parents.
 .in +0.5i
 .br
 .B bool \fIdry_run\fP;
-.br
-.B void * \fIanchor\fP;
 
 .B pid_t \fIstopped\fP;
 .br
@@ -45,9 +43,9 @@ sharing the ability to do so with its siblings and parents.
 .in
 };
 
-.B typedef int (*jobserver_main_callback_t)(void * \fIanchor\fP, void * \fIdata\fP);
+.B typedef int (*jobserver_main_callback_t)(void * \fIdata\fP, size_t \fIid\fP);
 .br
-.B typedef void (*jobserver_exit_callback_t) (void * \fIanchor\fP, void * \fIdata\fP, int \fIstatus\fP);
+.B typedef void (*jobserver_exit_callback_t)(void * \fIdata\fP, size_t \fIid\fP, int \fIstatus\fP);
 
 .B void jobserver_close_(struct jobserver * \fIjs\fP, bool \fIinherit\fP);
 

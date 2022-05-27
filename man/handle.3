@@ -8,11 +8,11 @@ jobserver_launch_job, jobserver_clear - spawn a job or clear the jobserver
 
 .B #include <jobserver.h>
 
-.B typedef int (*jobserver_main_callback_t)(void * \fIdata\fP, size_t \fIid\fP);
+.B typedef int (*jobserver_main_callback_t)(void * \fIarg\fP);
 .br
 .B typedef void (*jobserver_exit_callback_t)(void * \fIdata\fP, size_t \fIid\fP, int \fIstatus\fP);
 
-.B int jobserver_launch_job(struct jobserver * \fIjs\fP, int \fIwait\fP, bool \fIshared\fP, void * \fIdata\fP, size_t \fIid\fP, jobserver_main_callback_t \fImain\fP, jobserver_exit_callback_t \fIexit\fP);
+.B int jobserver_launch_job(struct jobserver * \fIjs\fP, int \fIwait\fP, bool \fIshared\fP, void * \fIarg\fP, size_t \fIid\fP, jobserver_main_callback_t \fImain\fP, jobserver_exit_callback_t \fIexit\fP);
 .br
 .B void jobserver_clear(struct jobserver * \fIjs\fP);
 
@@ -36,8 +36,10 @@ Jobserver \fIjs\fP could be \fIshared\fP with the new
 process such that it would be possible to use \fBjobserver_connect\fP(3)
 and access jobserver \fIjs\fP in the new process.
 
-Arguments \fIdata\fP and \fIid\fP are passed to \fImain\fP and \fIexit\fP,
-the latter additionaly receiving the \fIexit\fP status of
+The \fIarg\fP argument is passed to \fImain\fP.
+
+Arguments \fIdata\fP and \fIid\fP are passed to \fIexit\fP,
+in addition to the \fIexit\fP status of
 the spwaned process as specified in
 .BR wait (2).
 

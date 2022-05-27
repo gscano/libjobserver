@@ -9,7 +9,7 @@
 #include "internal.h"
 
 int jobserver_launch_job(struct jobserver * js, int wait, bool shared,
-			 void * data, size_t id,
+			 void * arg, void * data, size_t id,
 			 jobserver_main_callback_t main,
 			 jobserver_exit_callback_t exit)
 {
@@ -41,7 +41,7 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool shared,
   else if(job->pid == 0)
     {
       jobserver_close_(js, shared);
-      _exit(main(data, id));
+      _exit(main(arg));
     }
   else
     {

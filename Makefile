@@ -17,7 +17,7 @@ MAKEFLAGS=--no-builtin-rules
 
 .PHONY: all check example clean distclean dist install uninstall
 
-all: $(BUILDIR)/libjobserver.a $(BUILDIR)/libjobserver.so
+all: $(BUILDIR)/libjobserver.a $(BUILDIR)/libjobserver.so check example
 
 SRC=$(wildcard src/*.c)
 OBJ=$(addprefix $(BUILDIR)/, $(SRC:%.c=%.o))
@@ -102,6 +102,7 @@ clean:
 	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
 	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok) main.stderr)
+	rm -f $(addprefix $(BUILDIR)/exp/, *.d *.o)
 	rm -f libjobserver-$(VERSION)
 
 distclean: clean

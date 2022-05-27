@@ -26,7 +26,7 @@ struct jobserver
   int write;// token pipe (write)
 };
 
-typedef int (*jobserver_main_callback_t)(void * data, size_t id);
+typedef int (*jobserver_main_callback_t)(void * arg);
 typedef void (*jobserver_exit_callback_t) (void * data, size_t id, int status);
 
 int jobserver_read_env(char const * env,
@@ -46,7 +46,7 @@ int jobserver_create_n(struct jobserver * js, size_t size, char token, bool dry_
 int jobserver_close(struct jobserver * js);
 
 int jobserver_launch_job(struct jobserver * js, int wait, bool shared,
-			 void * data, size_t id,
+			 void * arg, void * data, size_t id,
 			 jobserver_main_callback_t main,
 			 jobserver_exit_callback_t exit);
 int jobserver_terminate_job(struct jobserver * js, pid_t pid, int status);

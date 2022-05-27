@@ -17,11 +17,9 @@ struct data
   char * arg;
 };
 
-int test(void * data_, size_t id)
+int test(void * data_)
 {
-  (void)id;
-
-  struct data * data = data_;
+  struct data * data = (struct data *)data_;
 
   fprintf(stdout, "Launching job %s '%s  %s'.\n",
 	  data->id, data->exe, data->arg);
@@ -91,7 +89,7 @@ void connect_to(struct jobserver * js, char * arg)
   else
     {
       assert(size >= 0 && size <= 26);
-      tokens = alloca(26);
+      tokens = alloca(26 + 1);
       strcpy(tokens, "abcdefghijklmnopqrstuvwxyz");
       tokens[size] = '\0';
     }
@@ -179,7 +177,7 @@ int main(int argc, char ** argv)
   prepare_jobs(jobs, argc - shift, argv[2], argv + shift);
 
   for(int i = 0; i < argc - shift; ++i)
-    assert(jobserver_launch_job(&js, -1, true, &jobs[i], i, test, end) == 0);
+    assert(jobserver_launch_job(&js, -1, true, &jobs[i], &jobs[i], i, test, end) == 0);
 
  collect:;
 

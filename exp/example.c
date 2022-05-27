@@ -35,9 +35,9 @@ int run(void * data_)// Not empty
   return status;
 }
 
-void end(void * data, int status)
+void end(void * data, size_t id, int status)
 {
-  fprintf(stderr, "Job '%s' collected with status: %d.\n", (char *)data, status);
+  fprintf(stderr, "Job '%zu' '%s' collected with status: %d.\n", id, (char *)data, status);
 }
 
 void connect_to(struct jobserver * js, char * tokens)
@@ -86,7 +86,7 @@ int main(int argc, char ** argv)
 
   for(int i = shift; i < argc; ++i)
     if(strlen(argv[i]) > 0)
-      if(jobserver_launch_job(&js, -1, true, argv[i], run, end) == -1)
+      if(jobserver_launch_job(&js, -1, true, argv[i], argv[i], i, run, end) == -1)
 	return EXIT_FAILURE;
 
   int status;

@@ -2,6 +2,8 @@ VERSION ?= X.Y.Z
 CFLAGS ?= -W -Wall -Werror -Wextra # -DUSE_SIGNALFD # -g -O0
 T_CFLAGS ?= #-DNDEBUG -flto
 BUILDIR ?= .
+OBJDIR ?= $(BUILDIR)
+BINDIR ?= $(BUILDIR)
 prefix ?= /usr
 
 datarootdir = $(prefix)/share
@@ -17,31 +19,33 @@ MAKEFLAGS=--no-builtin-rules
 
 .PHONY: all check example clean distclean dist install uninstall
 
-all: $(BUILDIR)/libjobserver.a $(BUILDIR)/libjobserver.so check example
+all: $(BINDIR)/libjobserver.a $(BINDIR)/libjobserver.so check example
 
 SRC=$(wildcard src/*.c)
-OBJ=$(addprefix $(BUILDIR)/, $(SRC:%.c=%.o))
+OBJ=$(addprefix $(OBJDIR)/, $(SRC:%.c=%.o))
 
-$(BUILDIR)/libjobserver.a: $(BUILDIR)/libjobserver-$(VERSION).a
+$(BINDIR)/libjobserver.a: $(BINDIR)/libjobserver-$(VERSION).a
 	ln -sf $(notdir $<) $@
 
-$(BUILDIR)/libjobserver.so: $(BUILDIR)/libjobserver-$(VERSION).so
+$(BINDIR)/libjobserver.so: $(BINDIR)/libjobserver-$(VERSION).so
 	ln -sf $(notdir $<) $@
 
-$(BUILDIR)/libjobserver-$(VERSION).a: $(OBJ)
+$(BINDIR)/libjobserver-$(VERSION).a: $(OBJ)
+	@mkdir -p $(dir $@)
 	ar -rc $@ $(OBJ)
 	ranlib $@
 
-$(BUILDIR)/libjobserver-$(VERSION).so: $(OBJ)
+$(BINDIR)/libjobserver-$(VERSION).so: $(OBJ)
+	@mkdir -p $(dir $@)
 	$(CC) -shared $(LDFLAGS) -o $@ $^
 
 -include $(OBJ:%.o=%.d)
 
-$(BUILDIR)/src/%.o: src/%.c $(BUILDIR)/src/config.h
+$(OBJDIR)/src/%.o: src/%.c $(OBJDIR)/src/config.h
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -I $(BUILDIR)/src -MMD -o $@ $<
+	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -I $(OBJDIR)/src -MMD -o $@ $<
 
-$(BUILDIR)/src/config.h: src/config.h.in
+$(OBJDIR)/src/config.h: src/config.h.in
 	@mkdir -p $(dir $@)
 	$(if $(shell $(MAKE) -j 2 detect-makeflags--jobserver-), echo '#define MAKEFLAGS_JOBSERVER "--jobserver-$(shell $(MAKE) -j 2 detect-makeflags--jobserver-)"' | cat $< - > $@, $(error "Cannot detect MAKEFLAGS's '--jobserver-' section!"))
 
@@ -49,60 +53,60 @@ detect-makeflags--jobserver-:
 	@echo "$$MAKEFLAGS" | grep -- '--jobserver-' | sed 's/.*--jobserver-\([a-z]*\)=.*/\1/g'
 
 CHECK=env init handle main
-CHECK_OBJ=$(addprefix $(BUILDIR)/tst/, $(CHECK:%=%.o))
+CHECK_OBJ=$(addprefix $(OBJDIR)/tst/, $(CHECK:%=%.o))
 
 .PRECIOUS: $(CHECK_OBJ)
-.PRECIOUS: $(addprefix $(BUILDIR)/tst/, $(CHECK))
+.PRECIOUS: $(addprefix $(BINDIR)/tst/, $(CHECK))
 
-check: $(CHECK_OBJ:%.o=%.ok)
+check: $(CHECK_OBJ:$(OBJDIR)/%.o=$(BINDIR)/%.ok)
 
 -include $(CHECK_OBJ:%.o=%.d)
 
-$(BUILDIR)/tst/%.o: tst/%.c $(BUILDIR)/src/config.h
+$(OBJDIR)/tst/%.o: tst/%.c $(OBJDIR)/src/config.h
 	@mkdir -p $(dir $@)
-	$(CC) -c $(CFLAGS) -I src -I $(BUILDIR)/src -MMD -o $@ $<
+	$(CC) -c $(CFLAGS) -I src -I $(OBJDIR)/src -MMD -o $@ $<
 
-$(BUILDIR)/tst/%: $(BUILDIR)/tst/%.o $(BUILDIR)/libjobserver.a
+$(BINDIR)/tst/%: $(OBJDIR)/tst/%.o $(BINDIR)/libjobserver.a
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BUILDIR)/tst/main-so: $(BUILDIR)/tst/main.o $(BUILDIR)/libjobserver.so
+$(BINDIR)/tst/main-so: $(OBJDIR)/tst/main.o $(BINDIR)/libjobserver.so
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $(LDFLAGS) -L $(BUILDIR) -o $@ $< -ljobserver
+	$(CC) $(CFLAGS) $(LDFLAGS) -L $(BINDIR) -o $@ $< -ljobserver
 
-$(BUILDIR)/tst/%.ok: $(BUILDIR)/tst/%
+$(BINDIR)/tst/%.ok: $(BINDIR)/tst/%
 	$< > $<.ko 2>&1
 	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Test '"$<"' failed!"))
 
-$(BUILDIR)/tst/main.ok: $(BUILDIR)/tst/main $(BUILDIR)/tst/main.mk
-	$(MAKE) -j 1 -C $(BUILDIR)/tst -f main.mk test 2>$<.stderr 1>$<.ko
+$(BINDIR)/tst/main.ok: $(BINDIR)/tst/main $(BINDIR)/tst/main.mk
+	$(MAKE) -j 1 -C $(BINDIR)/tst -f main.mk test 2>$<.stderr 1>$<.ko
 	$(if $$? 0, mv -f $<.ko $<.ok, rm -f $<.ok; $(error "Check failed!"))
 
-ifneq ($(BUILDIR)/tst/main.mk,./tst/main.mk)
-$(BUILDIR)/tst/main.mk: tst/main.mk
+ifneq ($(BINDIR)/tst/main.mk,./tst/main.mk)
+$(BINDIR)/tst/main.mk: tst/main.mk
 	cp $< $@
 endif
 
-example: exp/example
+example: xmp/example
 
--include $(BUILDIR)/exp/example.d
+-include $(OBJDIR)/xmp/example.d
 
-$(BUILDIR)/exp/example: $(BUILDIR)/exp/example.o $(BUILDIR)/libjobserver.a
+$(BINDIR)/xmp/example: $(OBJDIR)/xmp/example.o $(BINDIR)/libjobserver.a
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(BUILDIR)/exp/example.o: exp/example.c
+$(OBJDIR)/xmp/example.o: xmp/example.c
 	@mkdir -p $(dir $@)
 	$(CC) -c $(CFLAGS) -I src -MMD -o $@ $<
 
 clean:
-	rm -f $(addprefix $(BUILDIR)/, src/config.h)
-	rm -f $(addprefix $(BUILDIR)/, libjobserver.a libjobserver.so)
-	rm -f $(addprefix $(BUILDIR)/, libjobserver-$(VERSION).a libjobserver-$(VERSION).so)
-	rm -f $(addprefix $(BUILDIR)/src/, *.d *.o)
-	rm -f $(addprefix $(BUILDIR)/tst/, *.d *.o)
-	rm -f $(addprefix $(BUILDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok) main.stderr)
-	rm -f $(addprefix $(BUILDIR)/exp/, *.d *.o)
+	rm -f $(addprefix $(OBJDIR)/, src/config.h)
+	rm -f $(addprefix $(BINDIR)/, libjobserver.a libjobserver.so)
+	rm -f $(addprefix $(BINDIR)/, libjobserver-$(VERSION).a libjobserver-$(VERSION).so)
+	rm -f $(addprefix $(OBJDIR)/src/, *.d *.o)
+	rm -f $(addprefix $(OBJDIR)/tst/, *.d *.o)
+	rm -f $(addprefix $(BINDIR)/tst/, $(CHECK) $(CHECK:%=%.ko) $(CHECK:%=%.ok) main.stderr main.mk)
+	rm -f $(addprefix $(BINDIR)/xmp/, *.d *.o)
 	rm -f libjobserver-$(VERSION)
 
 distclean: clean
@@ -111,7 +115,7 @@ distclean: clean
 DISTFILES=Makefile LICENSE
 DISTFILES+=$(wildcard src/*.c) $(wildcard src/*.h) src/config.h.in
 DISTFILES+=$(wildcard tst/*.c) tst/main.mk tst/main.sh
-DISTFILES+=exp/example.c
+DISTFILES+=xmp/example.c
 DISTFILES+=$(addprefix man/, script.sh env.3 env_.3 handle.3 handle_.3 init.3 jobserver.7 wait.3)
 dist: $(DISTFILES)
 	$(foreach file, $^, $(shell mkdir -p $(dir libjobserver-$(VERSION)/$(file))))
@@ -135,7 +139,7 @@ $(libdir)/libjobserver.%: $(libdir)/libjobserver-$(VERSION).%
 	@mkdir -p $(dir $@)
 	ln -sf $(notdir $<) $@
 
-$(libdir)/libjobserver-$(VERSION).%: $(BUILDIR)/libjobserver-$(VERSION).%
+$(libdir)/libjobserver-$(VERSION).%: $(BINDIR)/libjobserver-$(VERSION).%
 	@mkdir -p $(dir $@)
 	cp $< $@
 

@@ -13,11 +13,12 @@ tst/handle
 tst/main
 
 tst/*.ok
+tst/*.ko
 tst/main.stderr
 
 tst/make
 
-exp/example
+xmp/example
 
 man/jobserver_*.3
 

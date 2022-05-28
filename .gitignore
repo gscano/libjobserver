@@ -31,3 +31,6 @@ libjobserver-*.a
 libjobserver-*.so
 
 libjobserver-*.tar.gz
+
+bin
+obj

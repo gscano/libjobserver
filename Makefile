@@ -87,7 +87,7 @@ $(BINDIR)/tst/main.mk: tst/main.mk
 	cp $< $@
 endif
 
-example: xmp/example
+example: $(BINDIR)/xmp/example
 
 -include $(OBJDIR)/xmp/example.d
 

@@ -30,21 +30,22 @@ int jobserver_launch_job(struct jobserver * js, int wait, bool shared,
       js->max_jobs = max_jobs;
     }
 
-  struct jobserver_job * job = &js->jobs[js->current_jobs];
+  int const pid = fork();
 
-  job->pid = fork();
-
-  if(job->pid == -1)
+  if(pid == -1)
     {
       goto error;// errno: EAGAIN, ENOMEM
     }
-  else if(job->pid == 0)
+  else if(pid == 0)
     {
       jobserver_close_(js, shared);
       _exit(main(arg));
     }
   else
     {
+      struct jobserver_job * const job = &js->jobs[js->current_jobs];
+
+      job->pid = pid;
       job->token = token;
       job->exit = exit;
       job->data = data;

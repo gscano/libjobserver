@@ -1,6 +1,6 @@
 VERSION ?= X.Y.Z
-CFLAGS ?= -W -Wall -Werror -Wextra # -DUSE_SIGNALFD # -g -O0
-T_CFLAGS ?= #-DNDEBUG -flto
+CFLAGS ?= -W -Wall -Werror -Wextra -DNDEBUG # -DUSE_SIGNALFD -g -O0
+LFLAGS ?= # -Wl
 BUILDIR ?= .
 OBJDIR ?= $(BUILDIR)
 BINDIR ?= $(BUILDIR)
@@ -19,7 +19,9 @@ MAKEFLAGS=--no-builtin-rules
 
 .PHONY: all check example clean distclean dist install uninstall
 
-all: $(BINDIR)/libjobserver.a $(BINDIR)/libjobserver.so check example
+all: binaries check example
+
+binaries: $(BINDIR)/libjobserver.a $(BINDIR)/libjobserver.so
 
 SRC=$(wildcard src/*.c)
 OBJ=$(addprefix $(OBJDIR)/, $(SRC:%.c=%.o))
@@ -43,7 +45,7 @@ $(BINDIR)/libjobserver-$(VERSION).so: $(OBJ)
 
 $(OBJDIR)/src/%.o: src/%.c $(OBJDIR)/src/config.h
 	@mkdir -p $(dir $@)
-	$(CC) -c -fPIC $(CFLAGS) $(T_CFLAGS) -I $(OBJDIR)/src -MMD -o $@ $<
+	$(CC) -c -fPIC $(CFLAGS) $(LFLAGS) -I $(OBJDIR)/src -MMD -o $@ $<
 
 $(OBJDIR)/src/config.h: src/config.h.in
 	@mkdir -p $(dir $@)

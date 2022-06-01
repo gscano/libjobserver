@@ -42,25 +42,7 @@ bool jobserver_is_connected_(struct jobserver * js)
   return js->poll[0].fd >= 0;
 }
 
-int jobserver_connect(struct jobserver * js)
-{
-  if(jobserver_getenv(js) == -1)
-    return -1;// errno: EPROTO
-  else
-    return jobserver_reconnect(js);
-}
-
-int jobserver_connect_to(struct jobserver * js, int read, int write, bool dry_run)
-{
-  js->dry_run = dry_run;
-
-  js->poll[1].fd = read;
-  js->write = write;
-
-  return jobserver_reconnect(js);
-}
-
-int jobserver_reconnect(struct jobserver * js)
+int jobserver_connect_(struct jobserver * js)
 {
   if(js->poll[1].fd == -1 || js->write == -1)
     {
@@ -81,6 +63,31 @@ int jobserver_reconnect(struct jobserver * js)
     }
 
   return jobserver_init_(js, 0);// errno: 0, EMFILE, ENFILE
+}
+
+int jobserver_connect(struct jobserver * js)
+{
+  if(jobserver_getenv(js) == -1)
+    return -1;// errno: EPROTO
+  else
+    return jobserver_connect_(js);
+}
+
+int jobserver_connect_to(struct jobserver * js, int read, int write, bool dry_run)
+{
+  js->dry_run = dry_run;
+
+  js->poll[1].fd = read;
+  js->write = write;
+
+  return jobserver_connect_(js);
+}
+
+int jobserver_reconnect(struct jobserver * js)
+{
+  jobserver_close_(js, true);
+
+  return jobserver_init_(js, 0);
 }
 
 static
@@ -154,9 +161,6 @@ int jobserver_create_(struct jobserver * js,
 
 void jobserver_close_(struct jobserver * js, bool keep)
 {
-  if(!jobserver_is_connected_(js))
-    return;
-
   if(!keep)
     {
       if(js->poll[1].fd != -1)
@@ -169,7 +173,8 @@ void jobserver_close_(struct jobserver * js, bool keep)
   if(js->jobs != NULL)
     free(js->jobs);
 
-  (void)jobserver_handle_sigchld_(SIG_UNBLOCK, &js->poll[0].fd);
+  if(js->poll[0].fd != -1)
+    (void)jobserver_handle_sigchld_(SIG_UNBLOCK, &js->poll[0].fd);
 }
 
 int jobserver_close(struct jobserver * js)
